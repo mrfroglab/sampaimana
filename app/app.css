@@ -1,0 +1,167 @@
+@import 'tailwindcss';
+
+/*
+ * Sampai Mana — design tokens.
+ * Editorial palette: warm paper, ink, one brick accent taken from the logo.
+ * Light/dark values swap through [data-theme]; utilities read the variables.
+ */
+:root,
+[data-theme='light'] {
+  --paper: #f5f2ea;
+  --paper-raised: #fbfaf6;
+  --paper-sunk: #ece7db;
+  --ink: #1a1813;
+  --ink-soft: #3b372f;
+  --muted: #6b665b;
+  --faint: #969083;
+  --line: #ddd6c6;
+  --line-strong: #bdb4a1;
+  --accent: #b23c1c;
+  --accent-ink: #8f2e13;
+  --accent-wash: #f6e2d6;
+  --ok: #2e6a3d;
+  --ok-wash: #dfeedd;
+  --warn: #9a6400;
+  --warn-wash: #f7ebcc;
+  --danger: #a32121;
+  --danger-wash: #f6dcdc;
+  --focus: #1f5fbf;
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
+  --paper: #13120f;
+  --paper-raised: #1b1a16;
+  --paper-sunk: #0e0d0b;
+  --ink: #eee8da;
+  --ink-soft: #d2cbbb;
+  --muted: #a29b8c;
+  --faint: #7a7468;
+  --line: #2f2c26;
+  --line-strong: #4a453c;
+  --accent: #e3693f;
+  --accent-ink: #f08a63;
+  --accent-wash: #3a2018;
+  --ok: #7cc28a;
+  --ok-wash: #1b2c1f;
+  --warn: #e0b153;
+  --warn-wash: #2f2614;
+  --danger: #ef7d7d;
+  --danger-wash: #351a1a;
+  --focus: #7aa7ff;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-raised: var(--paper-raised);
+  --color-sunk: var(--paper-sunk);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-wash: var(--accent-wash);
+  --color-ok: var(--ok);
+  --color-ok-wash: var(--ok-wash);
+  --color-warn: var(--warn);
+  --color-warn-wash: var(--warn-wash);
+  --color-danger: var(--danger);
+  --color-danger-wash: var(--danger-wash);
+  --color-focus: var(--focus);
+}
+
+@theme {
+  --font-serif: 'Newsreader', 'Iowan Old Style', Georgia, serif;
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', monospace;
+  --text-display: clamp(2.6rem, 1.6rem + 4.2vw, 5.4rem);
+  --text-display--line-height: 0.98;
+  --text-headline: clamp(1.9rem, 1.4rem + 2vw, 3rem);
+  --text-headline--line-height: 1.05;
+  --animate-pulse-dot: pulse-dot 2.4s ease-out infinite;
+  --animate-rise: rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+
+  @keyframes pulse-dot {
+    0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--accent) 55%, transparent); }
+    70% { box-shadow: 0 0 0 10px transparent; }
+    100% { box-shadow: 0 0 0 0 transparent; }
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+  }
+}
+
+@layer base {
+  html {
+    background: var(--paper);
+    color: var(--ink);
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply font-sans antialiased;
+    font-feature-settings: 'ss02', 'cv05';
+    min-height: 100dvh;
+  }
+  ::selection {
+    background: var(--accent);
+    color: var(--paper-raised);
+  }
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+  h1, h2, h3 {
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-[1200px] px-4 sm:px-6 lg:px-8;
+  }
+  .kicker {
+    @apply font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted;
+  }
+  .rule {
+    border-top: 1px solid var(--line);
+  }
+  .rule-strong {
+    border-top: 2px solid var(--ink);
+  }
+  .link {
+    @apply underline decoration-line-strong decoration-1 underline-offset-[3px] transition-colors hover:decoration-accent hover:text-accent-ink;
+  }
+  .prose-editorial {
+    @apply font-serif text-[1.15rem] leading-[1.7] text-ink-soft;
+  }
+  .prose-editorial p + p {
+    @apply mt-5;
+  }
+  .prose-editorial p:first-of-type::first-letter {
+    @apply float-left mr-2 mt-1 font-serif text-[3.6rem] leading-[0.8] text-ink;
+  }
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+  .paper-grain {
+    background-image: radial-gradient(color-mix(in oklab, var(--ink) 6%, transparent) 0.6px, transparent 0.6px);
+    background-size: 3px 3px;
+  }
+}

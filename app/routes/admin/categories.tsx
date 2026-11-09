@@ -1,0 +1,173 @@
+import { useState, type FormEvent } from 'react';
+import { useRevalidator } from 'react-router';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
+import type { Route } from './+types/categories';
+import { Alert, Button, Dialog, EmptyState, Field, Input, PageSkeleton, useToast } from '~/components/ui';
+import { AdminPageHeader, ConfirmDialog, useCanEdit } from '~/components/admin/shared';
+import { ApiError, publicGet } from '~/lib/api';
+import { seo } from '~/lib/seo';
+import { api, requireUser } from '~/lib/session';
+import type { Category } from '~/lib/types';
+
+export const meta: Route.MetaFunction = () => seo({ title: 'Kategori', noindex: true });
+
+export async function clientLoader({ request }: Route.ClientLoaderArgs) {
+  await requireUser(request, ['SUPER_ADMIN', 'EDITOR', 'VIEWER']);
+  const res = await publicGet<Category[]>('/api/categories');
+  return { categories: res.data };
+}
+
+export function HydrateFallback() {
+  return <PageSkeleton />;
+}
+
+const PRESETS = ['#b42318', '#1d4ed8', '#b45309', '#15803d', '#7e22ce', '#0f766e', '#be185d', '#57534e'];
+
+function CategoryDialog({ category, onClose, onDone }: { category: Category | null; onClose: () => void; onDone: () => void }) {
+  const [name, setName] = useState(category?.name ?? '');
+  const [color, setColor] = useState(category?.color ?? '#57534e');
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState(false);
+  const toast = useToast();
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    setErrors({});
+    try {
+      if (category) await api.patch(`/api/admin/categories/${category.id}`, { name: name.trim(), color });
+      else await api.post('/api/admin/categories', { name: name.trim(), color });
+      toast(category ? 'Kategori diperbarui.' : 'Kategori dibuat.');
+      onDone();
+      onClose();
+    } catch (err) {
+      if (err instanceof ApiError) setErrors({ ...err.fieldErrors, _form: err.message });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Dialog open onClose={onClose} title={category ? 'Ubah kategori' : 'Kategori baru'}>
+      <form onSubmit={submit} className="space-y-5" noValidate>
+        {errors._form && <Alert tone="danger">{errors._form}</Alert>}
+        <Field label="Nama" htmlFor="cat-name" error={errors.name} hint={category ? `Slug tetap: ${category.slug}` : 'Slug URL dibuat otomatis dari nama.'}>
+          <Input id="cat-name" value={name} onChange={(e) => setName(e.target.value)} invalid={!!errors.name} />
+        </Field>
+        <Field label="Warna penanda" htmlFor="cat-color" error={errors.color}>
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              id="cat-color"
+              type="color"
+              value={color}
+              onChange={(e) => setColor(e.target.value)}
+              className="h-10 w-14 cursor-pointer rounded-[3px] border border-line-strong bg-raised p-1"
+            />
+            <Input value={color} onChange={(e) => setColor(e.target.value)} className="w-28 font-mono text-sm" aria-label="Kode warna hex" />
+            <div className="flex gap-1.5" role="group" aria-label="Warna siap pakai">
+              {PRESETS.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setColor(p)}
+                  aria-label={p}
+                  aria-pressed={color.toLowerCase() === p}
+                  className="size-6 rounded-full border-2 border-paper outline outline-1 outline-line-strong aria-pressed:outline-2 aria-pressed:outline-ink"
+                  style={{ background: p }}
+                />
+              ))}
+            </div>
+          </div>
+        </Field>
+        <div className="flex justify-end gap-2 border-t border-line pt-4">
+          <Button variant="ghost" onClick={onClose}>
+            Batal
+          </Button>
+          <Button type="submit" loading={busy}>
+            Simpan
+          </Button>
+        </div>
+      </form>
+    </Dialog>
+  );
+}
+
+export default function AdminCategories({ loaderData }: Route.ComponentProps) {
+  const { categories } = loaderData;
+  const editable = useCanEdit();
+  const revalidator = useRevalidator();
+  const toast = useToast();
+  const [editing, setEditing] = useState<Category | 'new' | null>(null);
+  const [removing, setRemoving] = useState<Category | null>(null);
+
+  return (
+    <div className="space-y-6">
+      <AdminPageHeader
+        kicker={`${categories.length} kategori`}
+        title="Kategori"
+        description="Kategori yang masih dipakai kasus aktif maupun arsip tidak bisa dihapus."
+        actions={
+          editable && (
+            <Button onClick={() => setEditing('new')}>
+              <Plus className="size-4" /> Kategori
+            </Button>
+          )
+        }
+      />
+      {categories.length === 0 ? (
+        <EmptyState title="Belum ada kategori" />
+      ) : (
+        <ul className="divide-y divide-line border-y border-line">
+          {categories.map((c) => (
+            <li key={c.id} className="flex items-center gap-4 py-3">
+              <span className="size-3.5 shrink-0 rounded-full" style={{ background: c.color }} aria-hidden />
+              <div className="min-w-0 flex-1">
+                <p className="font-medium text-ink">{c.name}</p>
+                <p className="font-mono text-[11px] text-faint">/{c.slug}</p>
+              </div>
+              <span className="font-mono text-xs text-muted num">{c.caseCount ?? 0} kasus aktif</span>
+              {editable && (
+                <div className="flex gap-1">
+                  <Button size="sm" variant="ghost" aria-label={`Ubah ${c.name}`} onClick={() => setEditing(c)}>
+                    <Pencil className="size-3.5" />
+                  </Button>
+                  <Button size="sm" variant="ghost" aria-label={`Hapus ${c.name}`} onClick={() => setRemoving(c)}>
+                    <Trash2 className="size-3.5" />
+                  </Button>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {editing && (
+        <CategoryDialog
+          key={editing === 'new' ? 'new' : editing.id}
+          category={editing === 'new' ? null : editing}
+          onClose={() => setEditing(null)}
+          onDone={() => revalidator.revalidate()}
+        />
+      )}
+      <ConfirmDialog
+        open={!!removing}
+        onClose={() => setRemoving(null)}
+        title={`Hapus kategori “${removing?.name ?? ''}”?`}
+        confirmLabel="Hapus"
+        danger
+        onConfirm={async () => {
+          if (!removing) return;
+          try {
+            await api.del(`/api/admin/categories/${removing.id}`);
+            toast('Kategori dihapus.');
+            setRemoving(null);
+            revalidator.revalidate();
+          } catch (err) {
+            toast(err instanceof Error ? err.message : 'Gagal menghapus.', 'danger');
+            setRemoving(null);
+          }
+        }}
+      />
+    </div>
+  );
+}

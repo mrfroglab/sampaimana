@@ -1,16 +1,55 @@
-# React + Vite
+# Sampai Mana — Web
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Situs publik dan meja redaksi untuk **Sampai Mana**, pelacak perkembangan kasus hukum publik di Indonesia.
 
-Currently, two official plugins are available:
+React 19 · React Router 7 (framework mode, SSR) · TypeScript · Tailwind CSS 4 · Vite 7
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Halaman
 
-## React Compiler
+| Rute | Isi |
+| --- | --- |
+| `/` | Masthead + posisi kasus per tahap, kasus baru bergerak, kasus paling lama tertahan, catatan redaksi |
+| `/kasus` | Pencarian & filter (tahap, kategori, urutan) berbasis URL, paginasi |
+| `/kasus/:slug` | Rel status, linimasa, sumber terverifikasi, pihak terkait, riwayat perubahan, ikuti, bagikan, ajukan koreksi |
+| `/kasus/:slug/tahap/:id` | Artikel penjelasan per tahap |
+| `/statistik` | Durasi rata-rata & median per tahap, sebaran tahap & kategori |
+| `/data` | Unduhan CSV/JSON dan dokumentasi API publik |
+| `/tentang` | Metodologi, verifikasi, kebijakan koreksi & hak jawab, penafian |
+| `/akun/*` | Kasus diikuti, notifikasi, kontribusi, pengaturan |
+| `/kontribusi/baru` | Formulir kontribusi dengan bukti tautan/file |
+| `/redaksi/*` | Meja redaksi: ringkasan & SLA, kasus, linimasa, artikel, sumber, moderasi, koreksi, kategori, pengguna, log audit |
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Halaman publik dirender di server (SEO, Open Graph per kasus, `sitemap.xml`, `robots.txt`). Halaman akun & redaksi
+dimuat di klien setelah sesi dipulihkan.
 
-## Expanding the Oxlint configuration
+## Autentikasi
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+Access token hanya disimpan di memori. Saat halaman dibuka, klien meminta token baru lewat `POST /api/auth/refresh`
+menggunakan cookie `httpOnly` dari API (satu domain, jadi tanpa CORS). Tidak ada token di `localStorage`.
+
+## Desain
+
+Gaya editorial: kertas hangat, tinta, satu aksen bata dari logo. Tipografi Newsreader (judul), IBM Plex Sans (UI),
+IBM Plex Mono (nomor perkara & tanggal). Elemen khas: **rel status** lima stasiun seperti peta transit.
+Mendukung tema gelap, `prefers-reduced-motion`, dan navigasi keyboard.
+
+## Pengembangan
+
+```bash
+pnpm install
+pnpm dev            # http://localhost:5173, /api diproksikan ke http://localhost:5000 (ubah lewat API_PROXY)
+pnpm typecheck
+pnpm build && pnpm start
+```
+
+Env saat runtime: `API_INTERNAL_URL` (alamat API dari server SSR). Saat build: `VITE_SITE_URL` (URL kanonis).
+
+## Deploy ke server
+
+```bash
+ADMIN_EMAIL=email@anda.com SEED_DEMO=true ./deploy/deploy.sh
+```
+
+Skrip ini membangun image API & web, menyiapkan `/opt/stacks/apps/sampaimana` (Postgres, API, web) dengan rahasia
+yang dibuat sekali di `.env` (izin 600), lalu memasang blok Caddy untuk `sampaimana.hallojanu.me`. Aman dijalankan
+ulang untuk update; migrasi database berjalan otomatis saat API start.

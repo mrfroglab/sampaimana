@@ -1,0 +1,62 @@
+# Stack Sampai Mana di server ini: /opt/stacks/apps/sampaimana
+# Disalin & dijalankan oleh deploy/deploy.sh. Rahasia ada di .env (hanya di server, izin 600).
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: sampaimana-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sampaimana
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: sampaimana
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sampaimana -d sampaimana"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [gateway-net]
+
+  api:
+    image: sampaimana-api:local
+    container_name: sampaimana-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: "5000"
+      DATABASE_URL: postgresql://sampaimana:${DB_PASSWORD}@sampaimana-db:5432/sampaimana?schema=public
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ORIGIN: ${SITE_URL}
+      PUBLIC_URL: ${SITE_URL}
+      TRUST_PROXY: "1"
+      UPLOAD_DIR: /data/uploads
+      SMTP_URL: ${SMTP_URL:-}
+      MAIL_FROM: ${MAIL_FROM:-Sampai Mana <no-reply@hallojanu.me>}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
+      SEED_ADMIN_NAME: ${SEED_ADMIN_NAME:-Redaksi}
+      SEED_DEMO: ${SEED_DEMO:-false}
+    volumes:
+      - ./data/uploads:/data/uploads
+    networks: [gateway-net]
+
+  web:
+    image: sampaimana-web:local
+    container_name: sampaimana-web
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      API_INTERNAL_URL: http://sampaimana-api:5000
+    networks: [gateway-net]
+
+networks:
+  gateway-net:
+    external: true
