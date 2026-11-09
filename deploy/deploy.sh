@@ -48,9 +48,9 @@ mv "$STACK/.env.tmp" "$STACK/.env"; chmod 600 "$STACK/.env"
 cp "$WEB_SRC/deploy/docker-compose.yml" "$STACK/docker-compose.yml"
 
 echo "› Build image API ($API_SRC)"
-docker build -q -t sampaimana-api:local "$API_SRC" >/dev/null
+docker build -q -t ghcr.io/mrfroglab/api-sampaimana:latest "$API_SRC" >/dev/null
 echo "› Build image web ($WEB_SRC)"
-docker build -q --build-arg "VITE_SITE_URL=$SITE_URL" -t sampaimana-web:local "$WEB_SRC" >/dev/null
+docker build -q --build-arg "VITE_SITE_URL=$SITE_URL" -t ghcr.io/mrfroglab/sampaimana:latest "$WEB_SRC" >/dev/null
 
 cd "$STACK"
 docker compose up -d --remove-orphans

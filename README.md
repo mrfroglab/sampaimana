@@ -44,7 +44,13 @@ pnpm build && pnpm start
 
 Env saat runtime: `API_INTERNAL_URL` (alamat API dari server SSR). Saat build: `VITE_SITE_URL` (URL kanonis).
 
-## Deploy ke server
+## CI/CD
+
+`.github/workflows/deploy.yml` berjalan di setiap push ke `main`: typecheck, lint, dan build; lalu image di-push ke
+`ghcr.io/mrfroglab/sampaimana`; lalu runner self-hosted di server menjalankan `docker compose pull web && up -d --no-deps web`
+dan mengecek health. Pull request hanya menjalankan test.
+
+## Setup awal server
 
 ```bash
 ADMIN_EMAIL=email@anda.com SEED_DEMO=true ./deploy/deploy.sh

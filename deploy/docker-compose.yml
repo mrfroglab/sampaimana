@@ -19,7 +19,7 @@ services:
     networks: [gateway-net]
 
   api:
-    image: sampaimana-api:local
+    image: ghcr.io/mrfroglab/api-sampaimana:latest
     container_name: sampaimana-api
     restart: unless-stopped
     depends_on:
@@ -45,7 +45,7 @@ services:
     networks: [gateway-net]
 
   web:
-    image: sampaimana-web:local
+    image: ghcr.io/mrfroglab/sampaimana:latest
     container_name: sampaimana-web
     restart: unless-stopped
     depends_on:
