@@ -9,6 +9,7 @@ const COLS = [
       { to: '/kasus', label: 'Semua kasus' },
       { to: '/instansi', label: 'Lembaga' },
       { to: '/statistik', label: 'Statistik' },
+      { to: '/tren', label: 'Tren durasi' },
       { to: '/data', label: 'Data terbuka & API' },
       { to: '/tanam', label: 'Tanam widget' },
       { to: '/kontribusi/baru', label: 'Kirim kontribusi' },

@@ -10,6 +10,7 @@ export default [
   route('instansi', 'routes/institutions.tsx'),
   route('instansi/:slug', 'routes/institution.tsx'),
   route('statistik', 'routes/stats.tsx'),
+  route('tren', 'routes/trends.tsx'),
   route('data', 'routes/data.tsx'),
   route('tentang', 'routes/about.tsx'),
   route('embed/kasus/:slug', 'routes/embed.tsx'),
