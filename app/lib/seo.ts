@@ -9,16 +9,22 @@ export function seo({
   path = '/',
   type = 'website',
   noindex,
+  image,
+  jsonLd,
 }: {
   title?: string;
   description?: string;
   path?: string;
   type?: 'website' | 'article';
   noindex?: boolean;
+  /** Absolute or site-relative URL of the share image (default: the static /og.png). */
+  image?: string;
+  /** schema.org JSON-LD object(s), rendered as <script type="application/ld+json">. */
+  jsonLd?: Record<string, unknown> | Record<string, unknown>[];
 }) {
   const fullTitle = title ? `${title} — ${SITE_NAME}` : `${SITE_NAME} · Pelacak perkembangan kasus hukum`;
   const url = `${SITE_URL}${path}`;
-  const image = `${SITE_URL}/og.png`;
+  const imageUrl = image ? (image.startsWith('http') ? image : `${SITE_URL}${image}`) : `${SITE_URL}/og.png`;
   return [
     { title: fullTitle },
     { name: 'description', content: description },
@@ -29,11 +35,14 @@ export function seo({
     { property: 'og:title', content: title || SITE_NAME },
     { property: 'og:description', content: description },
     { property: 'og:url', content: url },
-    { property: 'og:image', content: image },
+    { property: 'og:image', content: imageUrl },
+    { property: 'og:image:width', content: '1200' },
+    { property: 'og:image:height', content: '630' },
     { name: 'twitter:card', content: 'summary_large_image' },
     { name: 'twitter:title', content: title || SITE_NAME },
     { name: 'twitter:description', content: description },
-    { name: 'twitter:image', content: image },
+    { name: 'twitter:image', content: imageUrl },
     ...(noindex ? [{ name: 'robots', content: 'noindex' }] : []),
+    ...(jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]).map((o) => ({ 'script:ld+json': o })) : []),
   ];
 }

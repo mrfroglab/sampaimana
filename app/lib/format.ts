@@ -102,3 +102,14 @@ export const cx = (...parts: (string | false | null | undefined)[]) => parts.fil
 
 /** Only allow same-site relative redirects after login. */
 export const safeNext = (next: string | null) => (next && next.startsWith('/') && !next.startsWith('//') ? next : '/akun');
+
+/** Same algorithm as the API's slugify, so links to /orang/:slug and /instansi/:slug match server slugs. */
+export const slugify = (text: string) =>
+  String(text)
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80)
+    .replace(/-+$/g, '');
