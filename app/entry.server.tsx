@@ -13,15 +13,25 @@ export const streamTimeout = 5_000;
  * Security headers for every rendered document.
  * - Pages are frame-protected (clickjacking) except the public widget at /embed/*,
  *   which is meant to be framed from any site.
- * - No script-src CSP on purpose: the app relies on inline scripts (theme, hydration).
+ * - script-src is an allow-list ('self' + inline), not nonce-based: the app relies on inline scripts (theme, hydration).
  */
 function applySecurityHeaders(request: Request, headers: Headers) {
   const { pathname } = new URL(request.url);
-  if (pathname.startsWith("/embed/")) {
-    headers.set("Content-Security-Policy", "frame-ancestors *");
+  const embed = pathname.startsWith("/embed/");
+  // Hardening that never needs inline-script exceptions. Only in production: the Vite dev server
+  // injects its own inline/eval helpers. 'unsafe-inline' stays because hydration and the theme
+  // script are inline; the allow-list still blocks scripts loaded from other origins.
+  const hardening = import.meta.env.PROD
+    ? "; object-src 'none'; base-uri 'self'; script-src 'self' 'unsafe-inline'"
+    : "";
+  if (embed) {
+    headers.set("Content-Security-Policy", `frame-ancestors *${hardening}`);
     headers.delete("X-Frame-Options");
   } else {
-    headers.set("Content-Security-Policy", "frame-ancestors 'self'");
+    headers.set(
+      "Content-Security-Policy",
+      `frame-ancestors 'self'${hardening}${import.meta.env.PROD ? "; form-action 'self'" : ""}`,
+    );
     headers.set("X-Frame-Options", "SAMEORIGIN");
   }
   headers.set("X-Content-Type-Options", "nosniff");
