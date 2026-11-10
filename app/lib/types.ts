@@ -42,6 +42,8 @@ export interface Category {
 
 export interface Defendant {
   id?: string;
+  /** URL slug of the person page (/orang/:slug); present on public case details. */
+  slug?: string;
   name: string;
   role: string;
   description?: string | null;
