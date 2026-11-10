@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Form, useRevalidator, useSearchParams } from 'react-router';
-import { Ban, Search, Users } from 'lucide-react';
+import { Ban, LockOpen, Search, ShieldOff, Users } from 'lucide-react';
 import type { Route } from './+types/users';
 import { Badge, Button, EmptyState, Input, PageSkeleton, Pagination, RelTime, Select, useToast } from '~/components/ui';
 import {
@@ -27,6 +27,8 @@ interface AdminUser {
   role: Role;
   bannedAt: string | null;
   createdAt: string;
+  totpEnabledAt: string | null;
+  lockedUntil: string | null;
   contributions: { approved: number; rejected: number; pending: number };
 }
 
@@ -50,12 +52,25 @@ export default function AdminUsers({ loaderData }: Route.ComponentProps) {
   const toast = useToast();
   const [saving, setSaving] = useState<string | null>(null);
   const [banning, setBanning] = useState<AdminUser | null>(null);
+  const [resetting, setResetting] = useState<AdminUser | null>(null);
 
-  const update = async (u: AdminUser, body: { role?: Role; banned?: boolean }) => {
+  type Patch = { role?: Role; banned?: boolean; reset2fa?: true; unlock?: true };
+  const message = (u: AdminUser, body: Patch) =>
+    body.reset2fa
+      ? `Verifikasi dua langkah ${u.name} direset. Semua sesinya diakhiri.`
+      : body.unlock
+        ? `Kunci akun ${u.name} dibuka.`
+        : body.banned === undefined
+          ? `Peran ${u.name} diubah. Sesinya di perangkat lain diakhiri.`
+          : body.banned
+            ? `${u.name} diblokir.`
+            : `Blokir ${u.name} dicabut.`;
+
+  const update = async (u: AdminUser, body: Patch) => {
     setSaving(u.id);
     try {
       await api.patch(`/api/admin/users/${u.id}`, body);
-      toast(body.banned === undefined ? `Peran ${u.name} diubah. Sesinya di perangkat lain diakhiri.` : body.banned ? `${u.name} diblokir.` : `Blokir ${u.name} dicabut.`);
+      toast(message(u, body));
       revalidator.revalidate();
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Gagal memperbarui.', 'danger');
@@ -99,6 +114,23 @@ export default function AdminUsers({ loaderData }: Route.ComponentProps) {
       </Button>
     );
 
+  const locked = (u: AdminUser) => Boolean(u.lockedUntil && new Date(u.lockedUntil) > new Date());
+
+  const securityActions = (u: AdminUser) => (
+    <>
+      {locked(u) && (
+        <Button size="sm" variant="outline" loading={saving === u.id} onClick={() => update(u, { unlock: true })}>
+          <LockOpen /> Buka kunci
+        </Button>
+      )}
+      {u.totpEnabledAt && (
+        <Button size="sm" variant="ghost" onClick={() => setResetting(u)}>
+          <ShieldOff /> Reset 2FA
+        </Button>
+      )}
+    </>
+  );
+
   const identity = (u: AdminUser, self: boolean) => (
     <div className="flex min-w-0 items-center gap-3">
       <Initials name={u.name} />
@@ -107,6 +139,8 @@ export default function AdminUsers({ loaderData }: Route.ComponentProps) {
           <span className="font-medium text-ink">{u.name}</span>
           {self && <Badge>Anda</Badge>}
           {u.bannedAt && <Badge tone="danger">Diblokir</Badge>}
+          {locked(u) && <Badge tone="warn">Terkunci</Badge>}
+          {u.totpEnabledAt ? <Badge tone="outline">2FA</Badge> : u.role !== 'CONTRIBUTOR' && <Badge tone="warn">Tanpa 2FA</Badge>}
         </p>
         <p className="truncate text-[13px] text-muted">{u.email}</p>
       </div>
@@ -132,7 +166,7 @@ export default function AdminUsers({ loaderData }: Route.ComponentProps) {
       <AdminPageHeader
         kicker={`${meta.total} akun`}
         title="Pengguna"
-        description="Mengubah peran atau memblokir akun langsung mengakhiri semua sesinya."
+        description="Mengubah peran, memblokir, atau mereset verifikasi dua langkah langsung mengakhiri semua sesi akun itu."
       />
       <Form method="get" role="search" className="relative w-full sm:max-w-sm">
         <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden />
@@ -166,8 +200,15 @@ export default function AdminUsers({ loaderData }: Route.ComponentProps) {
                       <td className={cx(tdClass, 'whitespace-nowrap text-[13px] text-muted')}>
                         <RelTime date={u.createdAt} />
                       </td>
-                      <td className={cx(tdClass, 'w-44')}>{roleSelect(u, self, 'w-40')}</td>
-                      <td className={cx(tdClass, 'w-32 text-right')}>{!self && banAction(u)}</td>
+                      <td className={cx(tdClass, 'w-44')}>{roleSelect(u, self, 'w-40 min-w-40')}</td>
+                      <td className={cx(tdClass, 'text-right')}>
+                        {!self && (
+                          <div className="flex justify-end gap-1.5">
+                            {securityActions(u)}
+                            {banAction(u)}
+                          </div>
+                        )}
+                      </td>
                     </tr>
                   );
                 })}
@@ -187,8 +228,9 @@ export default function AdminUsers({ loaderData }: Route.ComponentProps) {
                       Bergabung <RelTime date={u.createdAt} />
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {roleSelect(u, self, 'min-w-0 flex-1')}
+                    {!self && securityActions(u)}
                     {!self && banAction(u)}
                   </div>
                 </li>
@@ -210,6 +252,19 @@ export default function AdminUsers({ loaderData }: Route.ComponentProps) {
           if (!banning) return;
           await update(banning, { banned: true });
           setBanning(null);
+        }}
+      />
+      <ConfirmDialog
+        open={!!resetting}
+        onClose={() => setResetting(null)}
+        title={`Reset verifikasi dua langkah ${resetting?.name ?? ''}?`}
+        description="Lakukan hanya setelah memastikan identitas pemilik akun (mis. lewat telepon). Akun bisa masuk dengan kata sandi saja sampai pemiliknya mengaktifkan ulang."
+        confirmLabel="Reset 2FA"
+        danger
+        onConfirm={async () => {
+          if (!resetting) return;
+          await update(resetting, { reset2fa: true });
+          setResetting(null);
         }}
       />
     </div>
