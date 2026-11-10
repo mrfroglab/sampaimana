@@ -10,6 +10,7 @@ const COLS = [
       { to: '/instansi', label: 'Lembaga' },
       { to: '/statistik', label: 'Statistik' },
       { to: '/data', label: 'Data terbuka & API' },
+      { to: '/tanam', label: 'Tanam widget' },
       { to: '/kontribusi/baru', label: 'Kirim kontribusi' },
     ],
   },

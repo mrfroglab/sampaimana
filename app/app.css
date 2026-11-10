@@ -67,6 +67,15 @@
   color-scheme: dark;
 }
 
+/*
+ * Widget (/embed/*): a framed document whose color-scheme differs from the host page gets an
+ * opaque canvas. Keep it "normal" so the area around the card stays transparent; the card
+ * paints its own background from the tokens above.
+ */
+html[data-embed] {
+  color-scheme: normal;
+}
+
 @theme inline {
   --color-paper: var(--paper);
   --color-raised: var(--paper-raised);

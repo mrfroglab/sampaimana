@@ -8,6 +8,7 @@ import {
   BellRing,
   CalendarClock,
   Check,
+  CodeXml,
   Clock,
   ExternalLink,
   FileText,
@@ -484,6 +485,9 @@ export default function CasePage({ loaderData }: Route.ComponentProps) {
         <div className="mt-6 flex flex-wrap items-center gap-2">
           <FollowButton item={item} />
           <ShareButton title={item.title} />
+          <LinkButton to={`/tanam?kasus=${item.slug}`} variant="outline">
+            <CodeXml className="size-4" /> Tanam
+          </LinkButton>
           <LinkButton to={`/kontribusi/baru?kasus=${item.slug}`} variant="ghost">
             <Send className="size-4" /> Kirim kabar terbaru
           </LinkButton>
