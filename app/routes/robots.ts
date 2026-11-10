@@ -6,6 +6,7 @@ Allow: /
 Disallow: /akun
 Disallow: /redaksi
 Disallow: /masuk
+Disallow: /daftar
 Disallow: /kontribusi/
 
 Sitemap: ${SITE_URL}/sitemap.xml
