@@ -20,6 +20,7 @@ DB_NAME=${DB_NAME:-sampaimana}
 
 REMOTE=${BACKUP_REMOTE:-}           # contoh: gdrive-crypt:sampaimana  (kosong = hanya salinan lokal)
 NOTIFY_URL=${BACKUP_NOTIFY_URL:-}   # ntfy / Discord / Slack webhook (kosong = hanya tulis ke jurnal)
+HEARTBEAT_URL=${BACKUP_HEARTBEAT_URL:-}  # ping setelah backup LENGKAP berhasil (mis. healthchecks.io); tidak ada ping = alarm
 KEEP_DAILY=${KEEP_DAILY:-7}
 KEEP_WEEKLY=${KEEP_WEEKLY:-4}
 STATUS="$DEST/last-status.json"
@@ -110,3 +111,9 @@ fi
 
 write_status ok "backup $STAMP selesai$([ -n "$REMOTE" ] && echo ", tersalin ke $REMOTE")"
 log "selesai: $DIR"
+
+# Dead-man's switch: pinged only when everything succeeded, so a failed run, a skipped run or a dead timer
+# all show up as a missing ping at the monitoring service.
+if [ -n "$HEARTBEAT_URL" ]; then
+  curl -fsS -m 10 --retry 2 -o /dev/null "$HEARTBEAT_URL" && log "heartbeat terkirim" || log "peringatan: heartbeat gagal terkirim"
+fi

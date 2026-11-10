@@ -63,8 +63,10 @@ webhook **Discord**, atau webhook **Slack**. Notifikasi terkirim saat:
 - backup lokal sukses tapi sinkron luar server gagal (`exit 3`, unit tampil *failed*).
 
 Tanpa URL, pesan hanya masuk jurnal (`journalctl --user -u sampaimana-backup*`).
-Catatan: tidak ada pemberitahuan kalau timer sama sekali tidak jalan (mis. mesin mati berhari-hari). Untuk itu pakai
-monitor *heartbeat* eksternal (mis. healthchecks.io: tambahkan `curl` ke URL ping di akhir `backup.sh`).
+Notifikasi di atas hanya terkirim kalau skrip sempat berjalan. Kalau timer sama sekali tidak jalan (mesin mati berhari-hari),
+pakai **heartbeat**: daftarkan satu check di healthchecks.io (jadwal harian, grace sekitar 6 jam) dan isi `BACKUP_HEARTBEAT_URL`
+di `backup.env`. Ping hanya dikirim setelah backup lengkap berhasil (termasuk salinan luar server bila `BACKUP_REMOTE` diisi),
+jadi gagal, terlewat, atau timer mati sama-sama berujung pada ping yang tidak datang, dan layanan itu yang mengirim alarm.
 
 ### Uji restore (jalankan berkala, mis. sebulan sekali)
 
