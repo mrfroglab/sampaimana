@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { Route } from './+types/settings';
 import { ApiError, api, replaceSession, requireUser, updateUser } from '~/lib/session';
 import type { User } from '~/lib/types';
-import { Alert, Button, Checkbox, Field, Input, PageSkeleton, useToast } from '~/components/ui';
+import { Alert, Button, CardHeader, Checkbox, Field, Input, PageSkeleton, useToast } from '~/components/ui';
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   return { user: await requireUser(request) };
@@ -64,41 +64,53 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
   };
 
   return (
-    <div className="grid max-w-4xl gap-12 md:grid-cols-2">
-      <form onSubmit={saveProfile} className="space-y-5">
-        <h2 className="font-serif text-2xl text-ink">Profil &amp; notifikasi</h2>
-        <Field label="Nama" htmlFor="name">
-          <Input id="name" name="name" defaultValue={user.name} required minLength={2} />
-        </Field>
-        <Field label="Email" htmlFor="email" hint="Email tidak dapat diubah.">
-          <Input id="email" value={user.email} disabled readOnly />
-        </Field>
-        <Checkbox
-          name="emailNotifications"
-          defaultChecked={user.emailNotifications}
-          label="Kirim email saat kasus yang saya ikuti berubah"
-          hint="Notifikasi di situs tetap muncul meskipun email dimatikan."
-        />
-        <Button type="submit" loading={busy}>
-          Simpan
-        </Button>
+    <div className="max-w-2xl space-y-4">
+      <form onSubmit={saveProfile} className="card overflow-hidden">
+        <CardHeader title="Profil & notifikasi" description="Nama Anda ditampilkan ke redaksi saat berkontribusi." />
+        <div className="space-y-5 p-5">
+          <Field label="Nama" htmlFor="name">
+            <Input id="name" name="name" defaultValue={user.name} required minLength={2} />
+          </Field>
+          <Field label="Email" htmlFor="email" hint="Email tidak dapat diubah.">
+            <Input id="email" value={user.email} disabled readOnly />
+          </Field>
+          <div className="rounded-2xl border border-line p-4">
+            <Checkbox
+              name="emailNotifications"
+              defaultChecked={user.emailNotifications}
+              label="Kirim email saat kasus yang saya ikuti berubah"
+              hint="Notifikasi di situs tetap muncul meskipun email dimatikan."
+            />
+          </div>
+        </div>
+        <div className="flex justify-end border-t border-line bg-ink/[0.02] px-5 py-3.5">
+          <Button type="submit" loading={busy}>
+            Simpan
+          </Button>
+        </div>
       </form>
 
-      <form onSubmit={changePassword} className="space-y-5" noValidate>
-        <h2 className="font-serif text-2xl text-ink">Ganti kata sandi</h2>
-        {pwErrors._ && !pwErrors.newPassword && <Alert tone="danger">{pwErrors._}</Alert>}
-        <Field label="Kata sandi saat ini" htmlFor="currentPassword" error={pwErrors.currentPassword}>
-          <Input id="currentPassword" name="currentPassword" type="password" autoComplete="current-password" required />
-        </Field>
-        <Field label="Kata sandi baru" htmlFor="newPassword" error={pwErrors.newPassword} hint="Minimal 8 karakter.">
-          <Input id="newPassword" name="newPassword" type="password" autoComplete="new-password" required minLength={8} />
-        </Field>
-        <Field label="Ulangi kata sandi baru" htmlFor="confirm" error={pwErrors.confirm}>
-          <Input id="confirm" name="confirm" type="password" autoComplete="new-password" required />
-        </Field>
-        <Button type="submit" variant="outline" loading={pwBusy}>
-          Ganti kata sandi
-        </Button>
+      <form onSubmit={changePassword} className="card overflow-hidden" noValidate>
+        <CardHeader title="Ganti kata sandi" description="Perangkat lain akan dikeluarkan setelah kata sandi diganti." />
+        <div className="space-y-5 p-5">
+          {pwErrors._ && !pwErrors.newPassword && <Alert tone="danger">{pwErrors._}</Alert>}
+          <Field label="Kata sandi saat ini" htmlFor="currentPassword" error={pwErrors.currentPassword}>
+            <Input id="currentPassword" name="currentPassword" type="password" autoComplete="current-password" required invalid={!!pwErrors.currentPassword} />
+          </Field>
+          <div className="grid gap-5 sm:grid-cols-2">
+            <Field label="Kata sandi baru" htmlFor="newPassword" error={pwErrors.newPassword} hint="Minimal 8 karakter.">
+              <Input id="newPassword" name="newPassword" type="password" autoComplete="new-password" required minLength={8} invalid={!!pwErrors.newPassword} />
+            </Field>
+            <Field label="Ulangi kata sandi baru" htmlFor="confirm" error={pwErrors.confirm}>
+              <Input id="confirm" name="confirm" type="password" autoComplete="new-password" required invalid={!!pwErrors.confirm} />
+            </Field>
+          </div>
+        </div>
+        <div className="flex justify-end border-t border-line bg-ink/[0.02] px-5 py-3.5">
+          <Button type="submit" variant="outline" loading={pwBusy}>
+            Ganti kata sandi
+          </Button>
+        </div>
       </form>
     </div>
   );

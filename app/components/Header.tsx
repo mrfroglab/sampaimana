@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { Form, Link, NavLink, useLocation, useNavigate } from 'react-router';
-import { Bell, LogOut, Menu, Moon, Search, Settings, Shield, Sun, User as UserIcon, X } from 'lucide-react';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router';
+import { Bell, LogOut, Menu, Moon, Newspaper, Search, Send, Settings, Star, Sun, X } from 'lucide-react';
 import { Wordmark } from './Logo';
+import { CommandMenu, openCommandMenu } from './CommandMenu';
 import { buttonClass } from './ui';
 import { cx, isStaff, ROLE_LABEL } from '~/lib/format';
 import { api, logout, useSession } from '~/lib/session';
@@ -48,6 +49,14 @@ function useUnread(enabled: boolean) {
   return unread;
 }
 
+function useMac() {
+  const [mac, setMac] = useState(false);
+  useEffect(() => setMac(/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)), []);
+  return mac;
+}
+
+const iconBtn = buttonClass('ghost', 'icon', 'text-muted hover:text-ink');
+
 function AccountMenu() {
   const { user } = useSession();
   const [open, setOpen] = useState(false);
@@ -78,7 +87,7 @@ function AccountMenu() {
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         aria-haspopup="menu"
-        className="grid size-9 place-items-center rounded-full border border-line-strong bg-raised font-mono text-xs font-semibold text-ink hover:border-ink"
+        className="grid size-9 place-items-center rounded-full bg-ink text-xs font-semibold text-on-ink transition-opacity hover:opacity-85"
       >
         {initials}
         <span className="sr-only">Menu akun</span>
@@ -86,40 +95,46 @@ function AccountMenu() {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-11 z-50 w-64 animate-rise border border-line-strong bg-raised py-1 shadow-[0_18px_40px_-16px_rgba(0,0,0,0.35)]"
+          className="absolute right-0 top-11 z-50 w-64 animate-rise overflow-hidden rounded-2xl border border-line bg-raised p-1.5 shadow-pop"
         >
-          <div className="border-b border-line px-4 py-3">
-            <p className="truncate text-sm font-medium text-ink">{user.name}</p>
-            <p className="truncate text-xs text-muted">{user.email}</p>
-            <p className="kicker mt-2">{ROLE_LABEL[user.role]}</p>
+          <div className="px-3 pb-3 pt-2">
+            <p className="truncate text-sm font-semibold text-ink">{user.name}</p>
+            <p className="truncate text-[13px] text-muted">{user.email}</p>
+            <span className="mt-2 inline-flex h-5 items-center rounded-full bg-ink/[0.06] px-2 text-[11px] font-medium text-ink-soft">
+              {ROLE_LABEL[user.role]}
+            </span>
           </div>
-          <MenuLink to="/akun" icon={UserIcon}>
-            Kasus yang saya ikuti
-          </MenuLink>
-          <MenuLink to="/akun/notifikasi" icon={Bell}>
-            Notifikasi
-          </MenuLink>
-          <MenuLink to="/akun/kontribusi" icon={Shield}>
-            Kontribusi saya
-          </MenuLink>
-          <MenuLink to="/akun/pengaturan" icon={Settings}>
-            Pengaturan
-          </MenuLink>
-          {isStaff(user.role) && (
-            <MenuLink to="/redaksi" icon={Shield}>
-              Meja redaksi
+          <div className="border-t border-line pt-1.5">
+            <MenuLink to="/akun" icon={Star}>
+              Kasus yang saya ikuti
             </MenuLink>
-          )}
-          <button
-            role="menuitem"
-            onClick={async () => {
-              await logout();
-              navigate('/');
-            }}
-            className="flex w-full items-center gap-3 border-t border-line px-4 py-2.5 text-left text-sm text-ink-soft hover:bg-sunk hover:text-ink"
-          >
-            <LogOut className="size-4" /> Keluar
-          </button>
+            <MenuLink to="/akun/notifikasi" icon={Bell}>
+              Notifikasi
+            </MenuLink>
+            <MenuLink to="/akun/kontribusi" icon={Send}>
+              Kontribusi saya
+            </MenuLink>
+            <MenuLink to="/akun/pengaturan" icon={Settings}>
+              Pengaturan
+            </MenuLink>
+            {isStaff(user.role) && (
+              <MenuLink to="/redaksi" icon={Newspaper}>
+                Meja redaksi
+              </MenuLink>
+            )}
+          </div>
+          <div className="mt-1.5 border-t border-line pt-1.5">
+            <button
+              role="menuitem"
+              onClick={async () => {
+                await logout();
+                navigate('/');
+              }}
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-ink-soft hover:bg-ink/[0.06] hover:text-ink"
+            >
+              <LogOut className="size-4 text-muted" /> Keluar
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -128,8 +143,8 @@ function AccountMenu() {
 
 function MenuLink({ to, icon: Icon, children }: { to: string; icon: typeof Bell; children: React.ReactNode }) {
   return (
-    <Link role="menuitem" to={to} className="flex items-center gap-3 px-4 py-2.5 text-sm text-ink-soft hover:bg-sunk hover:text-ink">
-      <Icon className="size-4" /> {children}
+    <Link role="menuitem" to={to} className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-ink-soft hover:bg-ink/[0.06] hover:text-ink">
+      <Icon className="size-4 text-muted" /> {children}
     </Link>
   );
 }
@@ -140,23 +155,25 @@ export function Header() {
   const unread = useUnread(status === 'authenticated');
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const mac = useMac();
   useEffect(() => setMobileOpen(false), [location.pathname]);
+  const isAdmin = location.pathname.startsWith('/redaksi');
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-paper/92 backdrop-blur supports-[backdrop-filter]:bg-paper/80">
-      <div className="container-page flex h-16 items-center gap-3 sm:gap-6">
-        <Link to="/" aria-label="Sampai Mana — beranda" className="shrink-0">
+    <header className="sticky top-0 z-40 border-b border-line bg-paper/80 backdrop-blur-xl supports-[backdrop-filter]:bg-paper/70">
+      <div className={cx('mx-auto flex h-14 w-full items-center gap-2 px-4 sm:gap-4 sm:px-6 lg:px-8', isAdmin ? 'max-w-none' : 'max-w-[1280px]')}>
+        <Link to="/" aria-label="Sampai Mana — beranda" className="shrink-0 rounded-lg">
           <Wordmark />
         </Link>
-        <nav className="hidden items-center gap-1 md:flex" aria-label="Utama">
+        <nav className="ml-2 hidden items-center gap-0.5 md:flex" aria-label="Utama">
           {NAV.map((n) => (
             <NavLink
               key={n.to}
               to={n.to}
               className={({ isActive }) =>
                 cx(
-                  'relative px-3 py-2 text-[14px] transition-colors',
-                  isActive ? 'text-ink after:absolute after:inset-x-3 after:-bottom-[13px] after:h-[2px] after:bg-accent' : 'text-muted hover:text-ink',
+                  'rounded-full px-3 py-1.5 text-sm transition-colors',
+                  isActive ? 'bg-ink/[0.06] font-medium text-ink' : 'text-muted hover:text-ink',
                 )
               }
             >
@@ -165,76 +182,77 @@ export function Header() {
           ))}
         </nav>
 
-        <div className="ml-auto flex items-center gap-0.5 sm:gap-1.5">
-          <Form action="/kasus" className="relative hidden lg:block" role="search">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-faint" />
-            <input
-              name="q"
-              type="search"
-              placeholder="Cari kasus, nomor perkara, nama…"
-              aria-label="Cari kasus"
-              className="h-9 w-64 rounded-[3px] border border-line bg-raised pl-9 pr-3 text-sm placeholder:text-faint focus:w-80 focus:border-ink focus:outline-none transition-[width,border-color]"
-            />
-          </Form>
-          <Link to="/kasus" className="grid size-9 place-items-center rounded text-ink-soft hover:bg-sunk lg:hidden" aria-label="Cari kasus">
-            <Search className="size-[18px]" />
-          </Link>
+        <div className="ml-auto flex items-center gap-1 sm:gap-1.5">
           <button
-            onClick={toggle}
-            className="grid size-9 place-items-center rounded text-ink-soft hover:bg-sunk hover:text-ink"
-            aria-label={theme === 'dark' ? 'Gunakan tema terang' : 'Gunakan tema gelap'}
+            onClick={openCommandMenu}
+            className="hidden h-9 w-60 items-center gap-2 rounded-full bg-ink/[0.045] pl-3.5 pr-1.5 text-sm text-muted transition-colors hover:bg-ink/[0.07] lg:flex xl:w-72"
           >
+            <Search className="size-4" />
+            <span className="flex-1 text-left">Cari kasus…</span>
+            <span className="flex items-center gap-0.5">
+              <kbd className="kbd" suppressHydrationWarning>{mac ? '⌘' : 'Ctrl'}</kbd>
+              <kbd className="kbd">K</kbd>
+            </span>
+          </button>
+          <button onClick={openCommandMenu} className={cx(iconBtn, 'lg:hidden')} aria-label="Cari kasus">
+            <Search className="size-[18px]" />
+          </button>
+          <button onClick={toggle} className={iconBtn} aria-label={theme === 'dark' ? 'Gunakan tema terang' : 'Gunakan tema gelap'}>
             {theme === 'dark' ? <Sun className="size-[18px]" /> : <Moon className="size-[18px]" />}
           </button>
 
-          {status === 'loading' && <span className="ml-1 hidden h-9 w-[84px] animate-pulse rounded-[3px] bg-sunk sm:block" aria-hidden />}
+          {status === 'loading' && <span className="ml-1 hidden h-8 w-[72px] animate-pulse rounded-full bg-ink/[0.06] sm:block" aria-hidden />}
           {status === 'anonymous' && (
-            <Link to={`/masuk?next=${encodeURIComponent(location.pathname)}`} className={buttonClass('outline', 'sm', 'ml-1 hidden sm:inline-flex')}>
-              Masuk
-            </Link>
+            <>
+              <Link to={`/masuk?next=${encodeURIComponent(location.pathname)}`} className={buttonClass('ghost', 'sm', 'ml-1 max-sm:hidden')}>
+                Masuk
+              </Link>
+              <Link to="/daftar" className={buttonClass('primary', 'sm', 'max-sm:hidden')}>
+                Daftar
+              </Link>
+            </>
           )}
           {status === 'authenticated' && user && (
             <>
-              <Link to="/akun/notifikasi" className="relative grid size-9 place-items-center rounded text-ink-soft hover:bg-sunk hover:text-ink" aria-label={`Notifikasi${unread ? `, ${unread} belum dibaca` : ''}`}>
+              <Link to="/akun/notifikasi" className={cx(iconBtn, 'relative')} aria-label={`Notifikasi${unread ? `, ${unread} belum dibaca` : ''}`}>
                 <Bell className="size-[18px]" />
                 {unread > 0 && (
-                  <span className="absolute right-1 top-1 grid min-w-4 place-items-center rounded-full bg-accent px-1 font-mono text-[9px] font-semibold leading-4 text-white">
+                  <span className="absolute right-0.5 top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-ink px-1 text-[10px] font-semibold leading-none text-on-ink ring-2 ring-paper num">
                     {unread > 9 ? '9+' : unread}
                   </span>
                 )}
               </Link>
-              <AccountMenu />
+              <span className="ml-1">
+                <AccountMenu />
+              </span>
             </>
           )}
-          <button
-            className="grid size-9 place-items-center rounded text-ink-soft hover:bg-sunk md:hidden"
-            onClick={() => setMobileOpen((o) => !o)}
-            aria-expanded={mobileOpen}
-            aria-label="Menu"
-          >
+          <button className={cx(iconBtn, 'md:hidden')} onClick={() => setMobileOpen((o) => !o)} aria-expanded={mobileOpen} aria-label="Menu">
             {mobileOpen ? <X className="size-5" /> : <Menu className="size-5" />}
           </button>
         </div>
       </div>
 
       {mobileOpen && (
-        <div className="border-t border-line bg-paper md:hidden">
-          <nav className="container-page flex flex-col py-2" aria-label="Utama (seluler)">
+        <div className="animate-fade border-t border-line bg-paper md:hidden">
+          <nav className="container-page flex flex-col gap-0.5 py-3" aria-label="Utama (seluler)">
             {NAV.map((n) => (
               <NavLink
                 key={n.to}
                 to={n.to}
-                className={({ isActive }) => cx('border-b border-line py-3 font-serif text-xl', isActive ? 'text-accent-ink' : 'text-ink')}
+                className={({ isActive }) =>
+                  cx('rounded-xl px-3 py-2.5 text-[15px]', isActive ? 'bg-ink/[0.06] font-medium text-ink' : 'text-ink-soft')
+                }
               >
                 {n.label}
               </NavLink>
             ))}
             {status === 'anonymous' && (
-              <div className="flex gap-2 py-4">
-                <Link to="/masuk" className={buttonClass('primary', 'md', 'flex-1')}>
+              <div className="mt-2 grid grid-cols-2 gap-2 border-t border-line pt-3">
+                <Link to="/masuk" className={buttonClass('outline', 'md')}>
                   Masuk
                 </Link>
-                <Link to="/daftar" className={buttonClass('outline', 'md', 'flex-1')}>
+                <Link to="/daftar" className={buttonClass('primary', 'md')}>
                   Daftar
                 </Link>
               </div>
@@ -242,6 +260,7 @@ export function Header() {
           </nav>
         </div>
       )}
+      <CommandMenu />
     </header>
   );
 }

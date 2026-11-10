@@ -1,5 +1,4 @@
-import { Link, useNavigate } from 'react-router';
-import { ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router';
 import type { Route } from './+types/case-new';
 import { PageSkeleton, useToast } from '~/components/ui';
 import { CaseForm } from '~/components/admin/CaseForm';
@@ -26,15 +25,12 @@ export default function AdminCaseNew({ loaderData }: Route.ComponentProps) {
   const toast = useToast();
   return (
     <div className="space-y-8">
-      <Link to="/redaksi/kasus" className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink">
-        <ArrowLeft className="size-4" /> Semua kasus
-      </Link>
       <AdminPageHeader
-        kicker="Kasus baru"
+        crumbs={[{ to: '/redaksi/kasus', label: 'Kasus' }, { label: 'Kasus baru' }]}
         title="Mulai memantau kasus"
         description="Tahapan pertama dibuat otomatis sesuai tahap saat ini. Setelah disimpan, Anda bisa melengkapi linimasa, sumber, dan artikel penjelasan."
       />
-      <div className="max-w-3xl">
+      <div className="max-w-4xl">
         <CaseForm
           categories={loaderData.categories}
           submitLabel="Simpan dan lanjutkan"

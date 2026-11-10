@@ -1,10 +1,12 @@
+import type { ReactNode } from 'react';
 import { Link } from 'react-router';
+import { ArrowUpRight } from 'lucide-react';
 import type { Route } from './+types/stats';
 import { publicGet } from '~/lib/api';
 import { seo } from '~/lib/seo';
-import { STATUS_LABEL, STATUS_ORDER, cx, fmtDuration, fmtNum } from '~/lib/format';
+import { STATUS_LABEL, STATUS_ORDER, fmtDuration, fmtNum } from '~/lib/format';
 import type { Stats } from '~/lib/types';
-import { SectionHeading } from '~/components/ui';
+import { Card, CardHeader, EmptyState, PageHeader, StatBlock } from '~/components/ui';
 
 export const meta: Route.MetaFunction = () =>
   seo({ title: 'Statistik', description: 'Berapa lama kasus hukum bertahan di tiap tahap, dan di mana saja kasus tertahan.', path: '/statistik' });
@@ -14,16 +16,18 @@ export async function loader() {
   return { stats: res.data };
 }
 
-function Bar({ value, max, tone = 'accent' }: { value: number; max: number; tone?: 'accent' | 'ink' }) {
+/** Ink bar on a soft rounded track. Children are overlaid (e.g. a median tick). */
+function Bar({ value, max, children }: { value: number; max: number; children?: ReactNode }) {
+  const pct = max ? Math.max(value ? 1.5 : 0, (value / max) * 100) : 0;
   return (
-    <div className="h-6 bg-sunk">
-      <div
-        className={cx('h-full', tone === 'ink' ? 'bg-ink' : 'bg-accent')}
-        style={{ width: `${max ? Math.max(value ? 1.5 : 0, (value / max) * 100) : 0}%` }}
-      />
+    <div className="relative h-2 rounded-full bg-ink/[0.06]">
+      <div className="h-full rounded-full bg-ink" style={{ width: `${Math.min(100, pct)}%` }} />
+      {children}
     </div>
   );
 }
+
+const ROW = 'group grid items-center gap-3 px-5 py-3 transition-colors hover:bg-ink/[0.03]';
 
 export default function StatsPage({ loaderData }: Route.ComponentProps) {
   const { stats } = loaderData;
@@ -33,114 +37,116 @@ export default function StatsPage({ loaderData }: Route.ComponentProps) {
   const maxDur = Math.max(1, ...durations.map((d) => d.avgDays ?? 0));
   const verifiedPct = stats.totals.sources ? Math.round((stats.totals.verifiedSources / stats.totals.sources) * 100) : 0;
 
-  return (
-    <div className="container-page pt-10">
-      <header className="border-b-2 border-ink pb-6">
-        <p className="kicker">Angka di balik linimasa</p>
-        <h1 className="mt-2 font-serif text-headline text-ink">Statistik</h1>
-        <p className="mt-3 max-w-2xl text-lg text-ink-soft">
-          Seberapa lama sebuah kasus bertahan di setiap tahap, dan berapa banyak yang belum sampai di putusan. Dihitung dari
-          tahapan yang sudah selesai pada kasus aktif.
-        </p>
-      </header>
+  const totals = [
+    { label: 'Kasus dipantau', value: fmtNum(stats.totals.cases) },
+    { label: 'Belum diputus', value: fmtNum(stats.totals.ongoing) },
+    { label: 'Sumber tercatat', value: fmtNum(stats.totals.sources) },
+    { label: 'Sumber terverifikasi', value: `${verifiedPct}%` },
+  ];
 
-      <dl className="grid grid-cols-2 border-b border-line md:grid-cols-4">
-        {(
-          [
-            ['Kasus dipantau', fmtNum(stats.totals.cases)],
-            ['Belum diputus', fmtNum(stats.totals.ongoing)],
-            ['Sumber tercatat', fmtNum(stats.totals.sources)],
-            ['Sumber terverifikasi', `${verifiedPct}%`],
-          ] as const
-        ).map(([k, v], i) => (
-          <div key={k} className={cx('py-6', i % 2 === 1 && 'border-l border-line pl-5', i >= 2 && 'border-t border-line md:border-t-0', i === 2 && 'md:border-l md:pl-5')}>
-            <dt className="kicker">{k}</dt>
-            <dd className="mt-2 font-serif text-4xl text-ink num">{v}</dd>
-          </div>
+  return (
+    <div className="container-page pb-20">
+      <PageHeader
+        kicker="Angka di balik linimasa"
+        title="Statistik"
+        description="Seberapa lama sebuah kasus bertahan di setiap tahap, dan berapa banyak yang belum sampai di putusan. Dihitung dari tahapan yang sudah selesai pada kasus aktif."
+      />
+
+      <dl className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        {totals.map((t) => (
+          <StatBlock key={t.label} label={t.label} value={t.value} className="card p-5 sm:p-6" />
         ))}
       </dl>
 
-      <div className="mt-14 grid gap-14 lg:grid-cols-2">
-        <section>
-          <SectionHeading kicker="Durasi" title="Rata-rata lama tiap tahap" />
-          <p className="mt-2 text-sm text-muted">Garis tipis menandai median. Angka kecil di kanan: jumlah tahap yang dihitung.</p>
-          <ul className="mt-6 space-y-5">
+      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        <Card className="min-w-0">
+          <CardHeader
+            title="Rata-rata lama tiap tahap"
+            description="Garis vertikal menandai median. Angka kecil di kanan: jumlah tahap yang dihitung."
+          />
+          <ul className="space-y-5 p-5">
             {durations.map((d) => (
               <li key={d.stageType}>
                 <div className="flex items-baseline justify-between gap-3">
-                  <span className="text-[15px] font-medium text-ink">{STATUS_LABEL[d.stageType]}</span>
-                  <span className="font-mono text-sm text-ink num">
+                  <span className="min-w-0 truncate text-sm font-medium text-ink">{STATUS_LABEL[d.stageType]}</span>
+                  <span className="shrink-0 text-sm font-medium text-ink num">
                     {d.avgDays == null ? '—' : fmtDuration(Math.round(d.avgDays))}
-                    <span className="ml-2 text-xs text-faint">n={d.count}</span>
+                    <span className="ml-2 text-xs font-normal text-muted">n={d.count}</span>
                   </span>
                 </div>
-                <div className="relative mt-2">
-                  <Bar value={d.avgDays ?? 0} max={maxDur} />
-                  {d.medianDays != null && (
-                    <span
-                      className="absolute -bottom-1 -top-1 w-[2px] bg-ink"
-                      style={{ left: `${Math.min(100, (d.medianDays / maxDur) * 100)}%` }}
-                      title={`Median ${fmtDuration(Math.round(d.medianDays))}`}
-                    />
-                  )}
+                <div className="mt-2.5">
+                  <Bar value={d.avgDays ?? 0} max={maxDur}>
+                    {d.medianDays != null && (
+                      <span
+                        className="absolute -top-1 -bottom-1 w-[3px] -translate-x-1/2 rounded-full bg-ink ring-2 ring-raised"
+                        style={{ left: `${Math.min(100, (d.medianDays / maxDur) * 100)}%` }}
+                        title={`Median ${fmtDuration(Math.round(d.medianDays))}`}
+                      />
+                    )}
+                  </Bar>
                 </div>
               </li>
             ))}
           </ul>
-        </section>
+        </Card>
 
-        <section>
-          <SectionHeading kicker="Posisi" title="Kasus menurut tahap saat ini" />
-          <ul className="mt-6 space-y-4">
+        <Card className="min-w-0">
+          <CardHeader title="Kasus menurut tahap saat ini" description="Pilih tahap untuk melihat daftar kasusnya." />
+          <ul className="divide-y divide-line">
             {STATUS_ORDER.map((s) => (
-              <li key={s} className="grid grid-cols-[110px_1fr_40px] items-center gap-3">
-                <Link to={`/kasus?status=${s}`} className="link text-[14px]">
-                  {STATUS_LABEL[s]}
+              <li key={s}>
+                <Link to={`/kasus?status=${s}`} className={`${ROW} grid-cols-[minmax(0,6.5rem)_1fr_2.5rem] sm:grid-cols-[9rem_1fr_3rem]`}>
+                  <span className="truncate text-sm text-ink-soft group-hover:text-ink">{STATUS_LABEL[s]}</span>
+                  <Bar value={stats.byStatus[s]} max={maxStatus} />
+                  <span className="text-right text-sm font-medium text-ink num">{fmtNum(stats.byStatus[s])}</span>
                 </Link>
-                <Bar value={stats.byStatus[s]} max={maxStatus} tone={s === 'PUTUSAN' ? 'ink' : 'accent'} />
-                <span className="text-right font-mono text-sm num">{stats.byStatus[s]}</span>
               </li>
             ))}
           </ul>
-        </section>
+        </Card>
 
-        <section>
-          <SectionHeading kicker="Bidang" title="Menurut kategori" />
-          <ul className="mt-6 space-y-4">
+        <Card className="min-w-0">
+          <CardHeader title="Menurut kategori" description="Jumlah kasus yang dipantau di tiap bidang." />
+          <ul className="divide-y divide-line">
             {stats.byCategory.map((c) => (
-              <li key={c.id} className="grid grid-cols-[minmax(0,180px)_1fr_40px] items-center gap-3">
-                <Link to={`/kasus?category=${c.slug}`} className="link truncate text-[14px]">
-                  {c.name}
+              <li key={c.id}>
+                <Link
+                  to={`/kasus?category=${c.slug}`}
+                  className={`${ROW} grid-cols-[minmax(0,6.5rem)_1fr_2.5rem] sm:grid-cols-[minmax(0,11rem)_1fr_3rem]`}
+                >
+                  <span className="truncate text-sm text-ink-soft group-hover:text-ink">{c.name}</span>
+                  <Bar value={c.count} max={maxCat} />
+                  <span className="text-right text-sm font-medium text-ink num">{fmtNum(c.count)}</span>
                 </Link>
-                <div className="h-6 bg-sunk">
-                  <div className="h-full" style={{ width: `${(c.count / maxCat) * 100}%`, background: c.color }} />
-                </div>
-                <span className="text-right font-mono text-sm num">{c.count}</span>
               </li>
             ))}
           </ul>
-        </section>
+        </Card>
 
-        <section>
-          <SectionHeading kicker="Tertahan" title="Paling lama di tahap yang sama" />
+        <Card className="min-w-0">
+          <CardHeader title="Paling lama di tahap yang sama" description="Kasus aktif yang paling lama belum berpindah tahap." />
           {stats.longestActive.length === 0 ? (
-            <p className="mt-6 text-sm text-muted">Semua kasus yang dipantau sudah diputus.</p>
+            <div className="p-5">
+              <EmptyState title="Tidak ada yang tertahan">Semua kasus yang dipantau sudah diputus.</EmptyState>
+            </div>
           ) : (
-            <ol className="mt-4 divide-y divide-line">
-              {stats.longestActive.map((s) => (
-                <li key={s.case.slug} className="flex items-baseline justify-between gap-4 py-3">
-                  <Link to={`/kasus/${s.case.slug}`} className="link min-w-0 font-serif text-[1.05rem]">
-                    {s.case.title}
+            <ol className="divide-y divide-line">
+              {stats.longestActive.map((s, i) => (
+                <li key={s.case.slug}>
+                  <Link to={`/kasus/${s.case.slug}`} className="group flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-ink/[0.03]">
+                    <span className="w-5 shrink-0 text-xs text-muted num">{i + 1}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="line-clamp-2 text-sm font-medium text-ink">{s.case.title}</span>
+                      <span className="mt-0.5 block text-[13px] text-muted">{STATUS_LABEL[s.stageType]}</span>
+                    </span>
+                    <span className="shrink-0 text-right text-sm font-semibold text-ink num">{fmtDuration(s.daysRunning)}</span>
+                    <ArrowUpRight className="size-4 shrink-0 text-muted transition-colors group-hover:text-ink max-sm:hidden" aria-hidden />
                   </Link>
-                  <span className="shrink-0 text-right">
-                    <span className="block font-mono text-sm text-accent-ink num">{fmtDuration(s.daysRunning)}</span>
-                    <span className="text-xs text-muted">{STATUS_LABEL[s.stageType]}</span>
-                  </span>
                 </li>
               ))}
             </ol>
           )}
-        </section>
+        </Card>
       </div>
     </div>
   );

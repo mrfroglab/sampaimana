@@ -1,9 +1,17 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useRevalidator, useSearchParams } from 'react-router';
-import { Clock, Mail } from 'lucide-react';
+import { Clock, Mail, MessageSquareWarning } from 'lucide-react';
 import type { Route } from './+types/corrections';
 import { Alert, Badge, Button, Dialog, EmptyState, Field, PageSkeleton, Pagination, Textarea, useToast } from '~/components/ui';
-import { AdminPageHeader, RELATION_LABEL, Tabs, hoursLabel, useCanEdit } from '~/components/admin/shared';
+import {
+  AdminPageHeader,
+  Initials,
+  RELATION_LABEL,
+  Tabs,
+  dialogFooterClass,
+  hoursLabel,
+  useCanEdit,
+} from '~/components/admin/shared';
 import { ApiError } from '~/lib/api';
 import { cx, fmtDateTime } from '~/lib/format';
 import { seo } from '~/lib/seo';
@@ -73,8 +81,8 @@ function ResolveDialog({ item, onClose, onDone }: { item: CorrectionItem; onClos
     <Dialog open onClose={onClose} wide title="Tangani permintaan koreksi" description={`${item.case.title} · ${item.name}`}>
       <form onSubmit={submit} className="space-y-5" noValidate>
         {errors._form && <Alert tone="danger">{errors._form}</Alert>}
-        <blockquote className="border-l-2 border-line-strong pl-4 text-[14.5px] leading-relaxed whitespace-pre-line text-ink-soft">{item.message}</blockquote>
-        <div role="radiogroup" aria-label="Hasil" className="grid grid-cols-2 gap-2">
+        <blockquote className="tile whitespace-pre-line px-4 py-3 text-sm leading-relaxed text-ink-soft">{item.message}</blockquote>
+        <div role="radiogroup" aria-label="Hasil" className="grid gap-2 sm:grid-cols-2">
           {(['RESOLVED', 'REJECTED'] as const).map((s) => (
             <button
               key={s}
@@ -83,13 +91,24 @@ function ResolveDialog({ item, onClose, onDone }: { item: CorrectionItem; onClos
               aria-checked={status === s}
               onClick={() => setStatus(s)}
               className={cx(
-                'border px-4 py-3 text-left text-sm transition-colors',
-                status === s ? 'border-ink bg-raised text-ink' : 'border-line-strong text-muted hover:border-ink',
+                'flex items-start gap-3 rounded-2xl border px-4 py-3 text-left text-sm transition-[border-color,background-color,box-shadow]',
+                status === s ? 'border-ink bg-ink/[0.03] text-ink ring-1 ring-ink' : 'border-line text-muted hover:border-line-strong hover:bg-ink/[0.02]',
               )}
             >
-              <span className="block font-medium">{s === 'RESOLVED' ? 'Diterima / dikoreksi' : 'Tidak dikoreksi'}</span>
-              <span className="mt-0.5 block text-[12.5px]">
-                {s === 'RESOLVED' ? 'Data kasus sudah atau akan diperbaiki.' : 'Data sudah sesuai sumber.'}
+              <span
+                aria-hidden
+                className={cx(
+                  'mt-0.5 grid size-4 shrink-0 place-items-center rounded-full border',
+                  status === s ? 'border-ink bg-ink' : 'border-line-strong',
+                )}
+              >
+                {status === s && <span className="size-1.5 rounded-full bg-on-ink" />}
+              </span>
+              <span className="min-w-0">
+                <span className="block font-medium text-ink">{s === 'RESOLVED' ? 'Diterima / dikoreksi' : 'Tidak dikoreksi'}</span>
+                <span className="mt-0.5 block text-[13px] text-muted">
+                  {s === 'RESOLVED' ? 'Data kasus sudah atau akan diperbaiki.' : 'Data sudah sesuai sumber.'}
+                </span>
               </span>
             </button>
           ))}
@@ -118,7 +137,7 @@ function ResolveDialog({ item, onClose, onDone }: { item: CorrectionItem; onClos
           </Link>
           .
         </p>
-        <div className="flex justify-end gap-2 border-t border-line pt-4">
+        <div className={dialogFooterClass}>
           <Button variant="ghost" onClick={onClose}>
             Batal
           </Button>
@@ -166,49 +185,60 @@ export default function AdminCorrections({ loaderData }: Route.ComponentProps) {
       />
 
       {items.length === 0 ? (
-        <EmptyState title={status === 'OPEN' ? 'Tidak ada permintaan terbuka' : 'Belum ada data'} />
+        <EmptyState title={status === 'OPEN' ? 'Tidak ada permintaan terbuka' : 'Belum ada data'} icon={<MessageSquareWarning />} />
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-4">
           {items.map((item) => {
             const age = ageHours(item.createdAt);
             const late = item.status === 'OPEN' && age > SLA;
             return (
-              <article key={item.id} className="border-t-2 border-ink pt-4">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="min-w-0">
-                    <p className="flex flex-wrap items-center gap-2">
-                      <span className="font-medium text-ink">{item.name}</span>
-                      <Badge tone={item.relation === 'PIHAK_TERKAIT' || item.relation === 'KUASA_HUKUM' ? 'accent' : 'neutral'}>
-                        {RELATION_LABEL[item.relation] ?? item.relation}
-                      </Badge>
-                    </p>
-                    <a href={`mailto:${item.email}`} className="link mt-1 inline-flex items-center gap-1.5 text-[13px] text-muted">
-                      <Mail className="size-3.5" /> {item.email}
-                    </a>
-                    <p className="mt-1 text-[13px] text-muted">
-                      Tentang{' '}
-                      <Link to={`/redaksi/kasus/${item.case.id}`} className="link text-ink-soft">
-                        {item.case.title}
-                      </Link>
-                    </p>
+              <article key={item.id} className="card overflow-hidden">
+                <div className="flex flex-col gap-3 border-b border-line px-5 py-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <Initials name={item.name} />
+                    <div className="min-w-0">
+                      <p className="flex flex-wrap items-center gap-2">
+                        <span className="font-medium text-ink">{item.name}</span>
+                        <Badge tone={item.relation === 'PIHAK_TERKAIT' || item.relation === 'KUASA_HUKUM' ? 'ink' : 'neutral'}>
+                          {RELATION_LABEL[item.relation] ?? item.relation}
+                        </Badge>
+                      </p>
+                      <a
+                        href={`mailto:${item.email}`}
+                        className="mt-0.5 inline-flex max-w-full items-center gap-1.5 text-[13px] text-muted transition-colors hover:text-ink"
+                      >
+                        <Mail className="size-3.5 shrink-0" aria-hidden /> <span className="truncate">{item.email}</span>
+                      </a>
+                    </div>
                   </div>
                   {item.status === 'OPEN' ? (
-                    <span className={cx('inline-flex shrink-0 items-center gap-1.5 font-mono text-xs num', late ? 'text-danger' : 'text-muted')}>
-                      <Clock className="size-3.5" /> {hoursLabel(age)}
+                    <Badge tone={late ? 'warn' : 'neutral'} className="shrink-0 self-start">
+                      <Clock /> <span className="num">{hoursLabel(age)}</span>
                       {late && ' · lewat target'}
-                    </span>
+                    </Badge>
                   ) : (
-                    <span className="font-mono text-xs text-muted">{fmtDateTime(item.handledAt)}</span>
+                    <span className="shrink-0 text-[13px] text-muted num">Ditangani {fmtDateTime(item.handledAt)}</span>
                   )}
                 </div>
-                <p className="mt-3 max-w-3xl whitespace-pre-line text-[15px] leading-relaxed text-ink-soft">{item.message}</p>
-                {item.response && (
-                  <p className="mt-3 max-w-3xl border-l-2 border-line-strong pl-3 text-[13px] text-muted">
-                    <span className="font-medium text-ink-soft">Tanggapan{item.handledBy ? ` ${item.handledBy.name}` : ''}:</span> {item.response}
+
+                <div className="space-y-3 px-5 py-4">
+                  <p className="text-[13px] text-muted">
+                    Tentang{' '}
+                    <Link to={`/redaksi/kasus/${item.case.id}`} className="link font-medium text-ink">
+                      {item.case.title}
+                    </Link>
                   </p>
-                )}
-                <div className="mt-3 flex items-center justify-between gap-3">
-                  <span className="font-mono text-[11px] text-faint">Masuk {fmtDateTime(item.createdAt)}</span>
+                  <p className="max-w-3xl whitespace-pre-line text-body-lg leading-relaxed text-ink-soft">{item.message}</p>
+                  {item.response && (
+                    <div className="tile max-w-3xl px-4 py-3 text-[13px] text-ink-soft">
+                      <p className="kicker mb-1">Tanggapan{item.handledBy ? ` ${item.handledBy.name}` : ''}</p>
+                      {item.response}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line bg-alt px-5 py-3">
+                  <span className="text-xs text-muted num">Masuk {fmtDateTime(item.createdAt)}</span>
                   {item.status === 'OPEN' && editable && (
                     <Button size="sm" onClick={() => setHandling(item)}>
                       Tangani

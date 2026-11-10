@@ -1,9 +1,18 @@
 import { useState } from 'react';
 import { Form, useRevalidator, useSearchParams } from 'react-router';
-import { Search } from 'lucide-react';
+import { Ban, Search, Users } from 'lucide-react';
 import type { Route } from './+types/users';
 import { Badge, Button, EmptyState, Input, PageSkeleton, Pagination, RelTime, Select, useToast } from '~/components/ui';
-import { AdminPageHeader, ConfirmDialog } from '~/components/admin/shared';
+import {
+  AdminPageHeader,
+  ConfirmDialog,
+  Initials,
+  TableCard,
+  rowClass,
+  tdClass,
+  thClass,
+  theadClass,
+} from '~/components/admin/shared';
 import { ROLE_LABEL, cx } from '~/lib/format';
 import { seo } from '~/lib/seo';
 import { api, requireUser } from '~/lib/session';
@@ -63,6 +72,61 @@ export default function AdminUsers({ loaderData }: Route.ComponentProps) {
     return qs ? `?${qs}` : '/redaksi/pengguna';
   };
 
+  const roleSelect = (u: AdminUser, self: boolean, className?: string) => (
+    <Select
+      aria-label={`Peran ${u.name}`}
+      value={u.role}
+      disabled={self || saving === u.id}
+      onChange={(e) => update(u, { role: e.target.value as Role })}
+      className={cx('h-8 text-[13px]', className)}
+    >
+      {ROLES.map((r) => (
+        <option key={r} value={r}>
+          {ROLE_LABEL[r]}
+        </option>
+      ))}
+    </Select>
+  );
+
+  const banAction = (u: AdminUser) =>
+    u.bannedAt ? (
+      <Button size="sm" variant="outline" loading={saving === u.id} onClick={() => update(u, { banned: false })}>
+        Cabut blokir
+      </Button>
+    ) : (
+      <Button size="sm" variant="danger" onClick={() => setBanning(u)}>
+        <Ban /> Blokir
+      </Button>
+    );
+
+  const identity = (u: AdminUser, self: boolean) => (
+    <div className="flex min-w-0 items-center gap-3">
+      <Initials name={u.name} />
+      <div className="min-w-0">
+        <p className="flex flex-wrap items-center gap-1.5">
+          <span className="font-medium text-ink">{u.name}</span>
+          {self && <Badge>Anda</Badge>}
+          {u.bannedAt && <Badge tone="danger">Diblokir</Badge>}
+        </p>
+        <p className="truncate text-[13px] text-muted">{u.email}</p>
+      </div>
+    </div>
+  );
+
+  const record = (u: AdminUser) => {
+    const reviewed = u.contributions.approved + u.contributions.rejected;
+    return (
+      <div className="text-[13px] text-ink-soft num">
+        <span className="whitespace-nowrap">
+          {u.contributions.approved} diterima · {u.contributions.rejected} ditolak · {u.contributions.pending} antre
+        </span>
+        {reviewed > 0 && (
+          <span className="block text-xs text-muted">{Math.round((u.contributions.approved / reviewed) * 100)}% diterima</span>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <AdminPageHeader
@@ -70,64 +134,68 @@ export default function AdminUsers({ loaderData }: Route.ComponentProps) {
         title="Pengguna"
         description="Mengubah peran atau memblokir akun langsung mengakhiri semua sesinya."
       />
-      <Form method="get" role="search" className="relative max-w-md">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-faint" aria-hidden />
-        <Input name="q" defaultValue={params.get('q') ?? ''} placeholder="Cari nama atau email" aria-label="Cari pengguna" className="pl-9" />
+      <Form method="get" role="search" className="relative w-full sm:max-w-sm">
+        <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden />
+        <Input name="q" defaultValue={params.get('q') ?? ''} placeholder="Cari nama atau email" aria-label="Cari pengguna" className="pl-10" />
       </Form>
 
       {users.length === 0 ? (
-        <EmptyState title="Tidak ada pengguna yang cocok" />
+        <EmptyState title="Tidak ada pengguna yang cocok" icon={<Users />} />
       ) : (
-        <ul className="divide-y divide-line border-y border-line">
-          {users.map((u) => {
-            const self = u.id === me.id;
-            const reviewed = u.contributions.approved + u.contributions.rejected;
-            return (
-              <li key={u.id} className={cx('grid gap-3 py-3 md:grid-cols-[minmax(0,1fr)_170px_150px_auto] md:items-center', u.bannedAt && 'opacity-70')}>
-                <div className="min-w-0">
-                  <p className="flex flex-wrap items-center gap-2">
-                    <span className="font-medium text-ink">{u.name}</span>
-                    {self && <Badge>Anda</Badge>}
-                    {u.bannedAt && <Badge tone="danger">Diblokir</Badge>}
-                  </p>
-                  <p className="truncate text-[13px] text-muted">{u.email}</p>
-                  <p className="text-xs text-faint">
-                    Bergabung <RelTime date={u.createdAt} />
-                  </p>
-                </div>
-                <div className="font-mono text-[11.5px] text-muted num">
-                  {u.contributions.approved}✓ · {u.contributions.rejected}✗ · {u.contributions.pending} antre
-                  {reviewed > 0 && <span className="block text-faint">{Math.round((u.contributions.approved / reviewed) * 100)}% diterima</span>}
-                </div>
-                <Select
-                  aria-label={`Peran ${u.name}`}
-                  value={u.role}
-                  disabled={self || saving === u.id}
-                  onChange={(e) => update(u, { role: e.target.value as Role })}
-                  className="h-9 text-sm"
-                >
-                  {ROLES.map((r) => (
-                    <option key={r} value={r}>
-                      {ROLE_LABEL[r]}
-                    </option>
-                  ))}
-                </Select>
-                <div className="flex md:justify-end">
-                  {!self &&
-                    (u.bannedAt ? (
-                      <Button size="sm" variant="outline" loading={saving === u.id} onClick={() => update(u, { banned: false })}>
-                        Cabut blokir
-                      </Button>
-                    ) : (
-                      <Button size="sm" variant="danger" onClick={() => setBanning(u)}>
-                        Blokir
-                      </Button>
-                    ))}
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+        <>
+          <TableCard className="hidden md:block">
+            <table className="w-full border-collapse text-sm">
+              <thead className={theadClass}>
+                <tr>
+                  <th className={thClass}>Pengguna</th>
+                  <th className={thClass}>Kontribusi</th>
+                  <th className={thClass}>Bergabung</th>
+                  <th className={thClass}>Peran</th>
+                  <th className={thClass}>
+                    <span className="sr-only">Aksi</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-line">
+                {users.map((u) => {
+                  const self = u.id === me.id;
+                  return (
+                    <tr key={u.id} className={cx(rowClass, u.bannedAt && 'opacity-70')}>
+                      <td className={cx(tdClass, 'min-w-[240px]')}>{identity(u, self)}</td>
+                      <td className={tdClass}>{record(u)}</td>
+                      <td className={cx(tdClass, 'whitespace-nowrap text-[13px] text-muted')}>
+                        <RelTime date={u.createdAt} />
+                      </td>
+                      <td className={cx(tdClass, 'w-44')}>{roleSelect(u, self, 'w-40')}</td>
+                      <td className={cx(tdClass, 'w-32 text-right')}>{!self && banAction(u)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </TableCard>
+
+          <ul className="card divide-y divide-line overflow-hidden md:hidden">
+            {users.map((u) => {
+              const self = u.id === me.id;
+              return (
+                <li key={u.id} className={cx('space-y-3 px-4 py-4', u.bannedAt && 'opacity-70')}>
+                  {identity(u, self)}
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                    {record(u)}
+                    <span className="text-xs text-muted">
+                      Bergabung <RelTime date={u.createdAt} />
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {roleSelect(u, self, 'min-w-0 flex-1')}
+                    {!self && banAction(u)}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </>
       )}
       <Pagination page={meta.page} totalPages={meta.totalPages} hrefFor={hrefFor} />
 

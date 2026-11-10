@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
-import { CheckCheck } from 'lucide-react';
+import { Bell, CheckCheck } from 'lucide-react';
 import type { Route } from './+types/notifications';
 import { cx } from '~/lib/format';
 import { api, requireUser } from '~/lib/session';
 import type { Notification, PageMeta } from '~/lib/types';
-import { Button, EmptyState, PageSkeleton, Pagination, RelTime } from '~/components/ui';
+import { Badge, Button, Card, CardHeader, EmptyState, PageSkeleton, Pagination, RelTime } from '~/components/ui';
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   await requireUser(request);
@@ -45,7 +45,7 @@ export default function Notifications({ loaderData }: Route.ComponentProps) {
 
   if (items.length === 0) {
     return (
-      <EmptyState title="Belum ada notifikasi">
+      <EmptyState icon={<Bell />} title="Belum ada notifikasi">
         Notifikasi muncul ketika kasus yang Anda ikuti berubah status, ada tahapan baru, atau kontribusi Anda ditinjau.
       </EmptyState>
     );
@@ -53,54 +53,62 @@ export default function Notifications({ loaderData }: Route.ComponentProps) {
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
-        <p className="text-sm text-muted">
-          <span className="font-medium text-ink num">{unread}</span> belum dibaca
-        </p>
-        <Button variant="outline" size="sm" onClick={markAll} disabled={!unread}>
-          <CheckCheck className="size-4" /> Tandai semua dibaca
-        </Button>
-      </div>
-      <ul className="divide-y divide-line border-y border-line">
-        {items.map((n) => {
-          const body = (
+      <Card className="overflow-hidden">
+        <CardHeader
+          title="Notifikasi"
+          description={
             <>
-              <p className="flex items-center gap-2 text-[11px] text-muted">
-                {!n.readAt && <span className="size-2 rounded-full bg-accent" aria-label="Belum dibaca" />}
-                <span className="font-mono uppercase tracking-[0.08em]">{TYPE_LABEL[n.type] ?? n.type}</span>
-                <span aria-hidden>·</span>
-                <RelTime date={n.createdAt} />
-              </p>
-              <p className={cx('mt-1 font-serif text-[1.1rem] leading-snug', n.readAt ? 'text-ink-soft' : 'text-ink')}>{n.title}</p>
-              <p className="mt-1 text-sm text-muted">{n.body}</p>
+              <span className="font-medium text-ink num">{unread}</span> belum dibaca
             </>
-          );
-          return (
-            <li key={n.id} className={cx(!n.readAt && 'bg-raised')}>
-              {n.link ? (
-                <Link to={n.link} onClick={() => markOne(n.id)} className="block px-4 py-4 hover:bg-sunk">
-                  {body}
-                </Link>
-              ) : (
-                <div className="px-4 py-4" onClick={() => markOne(n.id)}>
-                  {body}
-                </div>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-      <div className="mt-8">
-        <Pagination
-          page={loaderData.meta.page}
-          totalPages={loaderData.meta.totalPages}
-          hrefFor={(p) => {
-            const next = new URLSearchParams(params);
-            next.set('page', String(p));
-            return `/akun/notifikasi?${next}`;
-          }}
+          }
+          action={
+            <Button variant="outline" size="sm" onClick={markAll} disabled={!unread} className="shrink-0">
+              <CheckCheck /> <span className="max-sm:sr-only">Tandai semua dibaca</span>
+            </Button>
+          }
         />
-      </div>
+        <ul className="divide-y divide-line">
+          {items.map((n) => {
+            const body = (
+              <div className="flex gap-3">
+                <span className="flex h-5 w-2 shrink-0 items-center" aria-hidden={!!n.readAt}>
+                  {!n.readAt && <span className="size-2 rounded-full bg-ink" role="img" aria-label="Belum dibaca" />}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted">
+                    <Badge tone="neutral">{TYPE_LABEL[n.type] ?? n.type}</Badge>
+                    <RelTime date={n.createdAt} />
+                  </p>
+                  <p className={cx('mt-1.5 text-sm leading-snug', n.readAt ? 'text-ink-soft' : 'font-semibold text-ink')}>{n.title}</p>
+                  <p className="mt-0.5 text-[13px] text-muted">{n.body}</p>
+                </div>
+              </div>
+            );
+            return (
+              <li key={n.id}>
+                {n.link ? (
+                  <Link to={n.link} onClick={() => markOne(n.id)} className="block px-5 py-4 transition-colors hover:bg-ink/[0.03]">
+                    {body}
+                  </Link>
+                ) : (
+                  <div className="px-5 py-4" onClick={() => markOne(n.id)}>
+                    {body}
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </Card>
+      <Pagination
+        page={loaderData.meta.page}
+        totalPages={loaderData.meta.totalPages}
+        hrefFor={(p) => {
+          const next = new URLSearchParams(params);
+          next.set('page', String(p));
+          return `/akun/notifikasi?${next}`;
+        }}
+      />
     </div>
   );
 }

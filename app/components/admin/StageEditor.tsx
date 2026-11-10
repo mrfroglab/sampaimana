@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Link2, FileText, Pencil, Plus, Trash2 } from 'lucide-react';
-import { Alert, Badge, Button, Dialog, Field, Input, Select, Textarea, useToast } from '~/components/ui';
+import { Alert, Badge, Button, CardHeader, Dialog, Field, Input, Select, Textarea, useToast } from '~/components/ui';
 import { ApiError } from '~/lib/api';
 import {
   STAGE_STATUS_LABEL,
@@ -14,7 +14,7 @@ import {
 } from '~/lib/format';
 import { api } from '~/lib/session';
 import type { CaseStatus, StageStatus } from '~/lib/types';
-import { ConfirmDialog, paragraphs, type AdminStage } from './shared';
+import { ConfirmDialog, dialogFooterClass, paragraphs, type AdminStage } from './shared';
 
 interface StageForm {
   stageType: CaseStatus;
@@ -161,7 +161,7 @@ function StageDialog({
             <Textarea id="sd-reason" rows={2} value={form.reason} onChange={(e) => set('reason', e.target.value)} />
           </Field>
         </div>
-        <div className="flex justify-end gap-2 border-t border-line pt-4">
+        <div className={dialogFooterClass}>
           <Button variant="ghost" onClick={onClose}>
             Batal
           </Button>
@@ -226,7 +226,7 @@ function ArticleDialog({
         <div>
           <div className="flex items-center justify-between">
             <span className="text-[13px] font-medium text-ink">Isi</span>
-            <div className="flex gap-1 text-[13px]" role="tablist" aria-label="Mode editor">
+            <div className="inline-flex gap-1 rounded-full bg-ink/[0.045] p-0.5 lg:hidden" role="tablist" aria-label="Mode editor">
               {(['write', 'preview'] as const).map((t) => (
                 <button
                   key={t}
@@ -234,7 +234,10 @@ function ArticleDialog({
                   role="tab"
                   aria-selected={tab === t}
                   onClick={() => setTab(t)}
-                  className={cx('rounded-[3px] px-2.5 py-1', tab === t ? 'bg-ink text-paper' : 'text-muted hover:text-ink')}
+                  className={cx(
+                    'h-7 rounded-full px-3 text-xs font-medium transition-[background-color,color,box-shadow]',
+                    tab === t ? 'bg-raised text-ink shadow-card' : 'text-muted hover:text-ink',
+                  )}
                 >
                   {t === 'write' ? 'Tulis' : 'Pratinjau'}
                 </button>
@@ -249,31 +252,31 @@ function ArticleDialog({
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 invalid={!!errors.content}
-                className="font-serif text-[16px]"
+                className="text-body-lg"
                 placeholder="Pisahkan paragraf dengan satu baris kosong. Jelaskan apa yang terjadi, dasar hukumnya, dan apa artinya bagi publik."
               />
               <p className={cx('mt-1.5 text-[13px]', errors.content ? 'text-danger' : 'text-muted')}>
                 {errors.content || `${paras.length} paragraf · ${content.trim().split(/\s+/).filter(Boolean).length} kata`}
               </p>
             </div>
-            <div className={cx('border border-line bg-raised px-5 py-4', tab === 'write' && 'max-lg:hidden')} aria-label="Pratinjau">
+            <div className={cx('min-w-0 rounded-2xl border border-line bg-alt px-5 py-4', tab === 'write' && 'max-lg:hidden')} aria-label="Pratinjau">
               <p className="kicker">Pratinjau</p>
-              <h3 className="mt-2 font-serif text-2xl leading-tight text-ink">{title || 'Judul artikel'}</h3>
+              <h3 className="mt-2 text-heading-sm font-semibold text-ink">{title || 'Judul artikel'}</h3>
               <div className="prose-editorial mt-4 !text-[1rem]">
                 {paras.length ? paras.map((p, i) => <p key={i}>{p}</p>) : <p className="text-faint">Belum ada isi.</p>}
               </div>
             </div>
           </div>
         </div>
-        <div className="flex flex-wrap justify-between gap-2 border-t border-line pt-4">
+        <div className="flex flex-col-reverse gap-2 border-t border-line pt-4 sm:flex-row sm:justify-between">
           {stage.article ? (
             <Button variant="danger" onClick={() => setConfirmRemove(true)}>
-              Tarik artikel
+              <Trash2 /> Tarik artikel
             </Button>
           ) : (
-            <span />
+            <span className="max-sm:hidden" />
           )}
-          <div className="flex gap-2">
+          <div className="flex flex-col-reverse gap-2 sm:flex-row">
             <Button variant="ghost" onClick={onClose}>
               Batal
             </Button>
@@ -325,73 +328,92 @@ export function StageEditor({
   const toast = useToast();
 
   return (
-    <div>
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-muted">
-          {stages.length} tahapan. Tahapan berstatus <strong className="font-medium text-ink">berjalan</strong> menentukan status kasus.
-        </p>
-        {editable && (
-          <Button size="sm" onClick={() => setEditing('new')}>
-            <Plus className="size-4" /> Tahapan
-          </Button>
-        )}
-      </div>
+    <div className="card overflow-hidden">
+      <CardHeader
+        title="Linimasa"
+        description={
+          <>
+            <span className="num">{stages.length}</span> tahapan. Tahapan berstatus <strong className="font-medium text-ink">berjalan</strong>{' '}
+            menentukan status kasus.
+          </>
+        }
+        action={
+          editable && (
+            <Button size="sm" className="shrink-0" onClick={() => setEditing('new')}>
+              <Plus /> Tahapan
+            </Button>
+          )
+        }
+      />
 
-      <ol className="mt-5 border-l-2 border-line-strong">
-        {stages.map((s) => {
+      <ol className="divide-y divide-line">
+        {stages.map((s, i) => {
           const overdue = s.status === 'AKTIF' && s.dueAt && new Date(s.dueAt) < new Date();
+          const lastItem = i === stages.length - 1;
           return (
-            <li key={s.id} className="relative pb-6 pl-6 last:pb-0">
-              <span
-                aria-hidden
-                className={cx(
-                  'absolute -left-[7px] top-1.5 size-3 rounded-full border-2',
-                  s.status === 'AKTIF' ? 'border-accent bg-accent' : s.status === 'SELESAI' ? 'border-ink bg-ink' : 'border-line-strong bg-paper',
-                )}
-              />
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <li key={s.id} className="relative flex gap-4 px-5 py-4 transition-colors hover:bg-ink/[0.02]">
+              {/* Rail: dot + connector */}
+              <div className="relative flex w-3 shrink-0 justify-center" aria-hidden>
+                {!lastItem && <span className="absolute -bottom-4 top-4 w-px bg-line" />}
+                {i > 0 && <span className="absolute -top-4 h-5 w-px bg-line" />}
+                <span
+                  className={cx(
+                    'relative mt-1.5 size-3 rounded-full ring-4 ring-raised',
+                    s.status === 'AKTIF' ? 'bg-ember' : s.status === 'SELESAI' ? 'bg-ink' : 'border border-line-strong bg-raised',
+                  )}
+                />
+              </div>
+
+              <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
                   <p className="flex flex-wrap items-center gap-2">
                     <span className="font-medium text-ink">{STATUS_LABEL[s.stageType]}</span>
-                    <Badge tone={s.status === 'AKTIF' ? 'accent' : s.status === 'SELESAI' ? 'neutral' : 'warn'}>
+                    <Badge tone={s.status === 'AKTIF' ? 'ink' : s.status === 'SELESAI' ? 'neutral' : 'outline'}>
                       {STAGE_STATUS_LABEL[s.status]}
                     </Badge>
                     {overdue && <Badge tone="warn">Lewat tenggat</Badge>}
                   </p>
-                  {s.title && <p className="mt-1 text-[15px] text-ink-soft">{s.title}</p>}
-                  <p className="mt-1 font-mono text-[11.5px] text-muted num">
+                  {s.title && <p className="mt-1 text-sm text-ink-soft">{s.title}</p>}
+                  <p className="mt-1 font-mono text-xs text-muted num">
                     {fmtDate(s.startedAt)} → {s.endedAt ? fmtDate(s.endedAt) : 'sekarang'}
                     {' · '}
                     {fmtDuration(daysBetween(s.startedAt, s.endedAt ?? new Date()))}
-                    {s.dueAt && ` · tenggat ${fmtDate(s.dueAt)}`}
+                    {s.dueAt && <span className={cx(overdue && 'text-ember')}>{` · tenggat ${fmtDate(s.dueAt)}`}</span>}
                   </p>
                   {s.summary && <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">{s.summary}</p>}
-                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[13px]">
-                    <span className={cx('inline-flex items-center gap-1', s.article ? 'text-ok' : 'text-faint')}>
-                      <FileText className="size-3.5" /> {s.article ? `Artikel: ${s.article.title}` : 'Belum ada artikel'}
+                  <div className="mt-2.5 flex flex-wrap gap-1.5">
+                    <span
+                      className={cx(
+                        'inline-flex h-[22px] min-w-0 max-w-full items-center gap-1 rounded-full px-2 text-xs font-medium',
+                        s.article ? 'bg-ink/[0.06] text-ink' : 'border border-dashed border-line-strong text-muted',
+                      )}
+                    >
+                      <FileText className="size-3 shrink-0" aria-hidden />
+                      <span className="truncate">{s.article ? `Artikel: ${s.article.title}` : 'Belum ada artikel'}</span>
                     </span>
-                    <span className="inline-flex items-center gap-1 text-muted">
-                      <Link2 className="size-3.5" /> {s.sources.length} sumber
+                    <span className="inline-flex h-[22px] items-center gap-1 rounded-full bg-ink/[0.06] px-2 text-xs font-medium text-ink-soft">
+                      <Link2 className="size-3" aria-hidden /> <span className="num">{s.sources.length}</span> sumber
                     </span>
                   </div>
                 </div>
                 {editable && (
-                  <div className="flex shrink-0 gap-1">
+                  <div className="flex shrink-0 items-center gap-1">
                     <Button size="sm" variant="outline" onClick={() => setWriting(s)}>
-                      <FileText className="size-3.5" /> {s.article ? 'Artikel' : 'Tulis'}
+                      <FileText /> {s.article ? 'Artikel' : 'Tulis'}
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => setEditing(s)} aria-label="Ubah tahapan">
-                      <Pencil className="size-3.5" />
+                    <Button size="icon-sm" variant="ghost" className="text-muted" onClick={() => setEditing(s)} aria-label="Ubah tahapan">
+                      <Pencil />
                     </Button>
                     <Button
-                      size="sm"
+                      size="icon-sm"
                       variant="ghost"
+                      className="text-muted hover:bg-danger-wash hover:text-danger"
                       onClick={() => setRemoving(s)}
                       aria-label="Hapus tahapan"
                       disabled={stages.length <= 1}
                       title={stages.length <= 1 ? 'Kasus harus punya minimal satu tahapan' : undefined}
                     >
-                      <Trash2 className="size-3.5" />
+                      <Trash2 />
                     </Button>
                   </div>
                 )}

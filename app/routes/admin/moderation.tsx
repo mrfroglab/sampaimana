@@ -1,9 +1,9 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useRevalidator, useSearchParams } from 'react-router';
-import { Clock, Download, ExternalLink, FileText } from 'lucide-react';
+import { Check, Clock, Download, ExternalLink, FileText, Inbox, Info, Link2, X } from 'lucide-react';
 import type { Route } from './+types/moderation';
 import { Alert, Badge, Button, Checkbox, Dialog, EmptyState, Field, Input, PageSkeleton, Pagination, Select, Textarea, useToast } from '~/components/ui';
-import { AdminPageHeader, Tabs, hoursLabel, useCanEdit } from '~/components/admin/shared';
+import { AdminPageHeader, Initials, Tabs, dialogFooterClass, hoursLabel, useCanEdit } from '~/components/admin/shared';
 import { ApiError } from '~/lib/api';
 import { STAGE_STATUS_LABEL, STATUS_LABEL, STATUS_ORDER, cx, daysBetween, fmtBytes, fmtDateTime, hostOf, toInputDate } from '~/lib/format';
 import { seo } from '~/lib/seo';
@@ -49,8 +49,20 @@ export function HydrateFallback() {
 
 const SLA = 48;
 
-function ReviewDialog({ item, onClose, onDone }: { item: QueueItem; onClose: () => void; onDone: () => void }) {
-  const [decision, setDecision] = useState<'APPROVED' | 'REJECTED'>('APPROVED');
+type Decision = 'APPROVED' | 'REJECTED';
+
+function ReviewDialog({
+  item,
+  initialDecision = 'APPROVED',
+  onClose,
+  onDone,
+}: {
+  item: QueueItem;
+  initialDecision?: Decision;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const [decision, setDecision] = useState<Decision>(initialDecision);
   const [applyStage, setApplyStage] = useState(Boolean(item.proposedStage));
   const [stage, setStage] = useState({
     stageType: (item.proposedStage ?? item.case.currentStatus) as CaseStatus,
@@ -102,29 +114,46 @@ function ReviewDialog({ item, onClose, onDone }: { item: QueueItem; onClose: () 
     <Dialog open onClose={onClose} wide title="Tinjau kontribusi" description={`${item.case.title} · dari ${item.user.name}`}>
       <form onSubmit={submit} className="space-y-5" noValidate>
         {errors._form && <Alert tone="danger">{errors._form}</Alert>}
-        <div role="radiogroup" aria-label="Keputusan" className="grid grid-cols-2 gap-2">
-          {(['APPROVED', 'REJECTED'] as const).map((d) => (
-            <button
-              key={d}
-              type="button"
-              role="radio"
-              aria-checked={decision === d}
-              onClick={() => setDecision(d)}
-              className={cx(
-                'border px-4 py-3 text-left transition-colors',
-                decision === d
-                  ? d === 'APPROVED'
-                    ? 'border-ok bg-ok-wash text-ok'
-                    : 'border-danger bg-danger-wash text-danger'
-                  : 'border-line-strong text-ink-soft hover:border-ink',
-              )}
-            >
-              <span className="block font-medium">{d === 'APPROVED' ? 'Terima' : 'Tolak'}</span>
-              <span className="mt-0.5 block text-[12.5px] opacity-80">
-                {d === 'APPROVED' ? 'Bukti cukup dan dapat diverifikasi.' : 'Bukti kurang, keliru, atau duplikat.'}
-              </span>
-            </button>
-          ))}
+        <div role="radiogroup" aria-label="Keputusan" className="grid gap-2 sm:grid-cols-2">
+          {(['APPROVED', 'REJECTED'] as const).map((d) => {
+            const on = decision === d;
+            const Icon = d === 'APPROVED' ? Check : X;
+            return (
+              <button
+                key={d}
+                type="button"
+                role="radio"
+                aria-checked={on}
+                onClick={() => setDecision(d)}
+                className={cx(
+                  'flex items-start gap-3 rounded-2xl border px-4 py-3 text-left transition-[border-color,background-color,box-shadow]',
+                  on
+                    ? d === 'APPROVED'
+                      ? 'border-ink bg-ink/[0.03] ring-1 ring-ink'
+                      : 'border-danger/50 bg-danger-wash ring-1 ring-danger/50'
+                    : 'border-line hover:border-line-strong hover:bg-ink/[0.02]',
+                )}
+              >
+                <span
+                  aria-hidden
+                  className={cx(
+                    'mt-0.5 grid size-5 shrink-0 place-items-center rounded-full [&_svg]:size-3',
+                    on ? (d === 'APPROVED' ? 'bg-ink text-on-ink' : 'bg-danger text-on-ink') : 'bg-ink/[0.06] text-muted',
+                  )}
+                >
+                  <Icon strokeWidth={2.5} />
+                </span>
+                <span className="min-w-0">
+                  <span className={cx('block text-sm font-medium', on && d === 'REJECTED' ? 'text-danger' : 'text-ink')}>
+                    {d === 'APPROVED' ? 'Terima' : 'Tolak'}
+                  </span>
+                  <span className="mt-0.5 block text-[13px] text-muted">
+                    {d === 'APPROVED' ? 'Bukti cukup dan dapat diverifikasi.' : 'Bukti kurang, keliru, atau duplikat.'}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         {decision === 'APPROVED' ? (
@@ -136,7 +165,7 @@ function ReviewDialog({ item, onClose, onDone }: { item: QueueItem; onClose: () 
               hint={item.proposedStage ? `Kontributor mengusulkan tahap ${STATUS_LABEL[item.proposedStage]}.` : 'Kontributor tidak mengusulkan tahap.'}
             />
             {applyStage && (
-              <div className="grid gap-4 border-l-2 border-line-strong pl-4 sm:grid-cols-2">
+              <div className="grid gap-4 rounded-2xl border border-line p-4 sm:grid-cols-2">
                 <Field label="Tahap" htmlFor="rv-type">
                   <Select id="rv-type" value={stage.stageType} onChange={(e) => setStage((s) => ({ ...s, stageType: e.target.value as CaseStatus }))}>
                     {STATUS_ORDER.map((s) => (
@@ -165,7 +194,8 @@ function ReviewDialog({ item, onClose, onDone }: { item: QueueItem; onClose: () 
                   <Input id="rv-date" type="date" value={stage.startedAt} onChange={(e) => setStage((s) => ({ ...s, startedAt: e.target.value }))} />
                 </Field>
                 {movesStatus && (
-                  <p className="self-end text-[13px] text-accent-ink sm:pb-2">
+                  <p className="flex items-start gap-2 self-end text-[13px] font-medium text-ink sm:pb-2.5">
+                    <Info className="mt-0.5 size-4 shrink-0 text-muted" aria-hidden />
                     Status kasus akan pindah ke {STATUS_LABEL[stage.stageType]} dan pengikut diberi tahu.
                   </p>
                 )}
@@ -203,7 +233,7 @@ function ReviewDialog({ item, onClose, onDone }: { item: QueueItem; onClose: () 
           </Field>
         )}
 
-        <div className="flex justify-end gap-2 border-t border-line pt-4">
+        <div className={dialogFooterClass}>
           <Button variant="ghost" onClick={onClose}>
             Batal
           </Button>
@@ -216,67 +246,106 @@ function ReviewDialog({ item, onClose, onDone }: { item: QueueItem; onClose: () 
   );
 }
 
-function ContributionCard({ item, editable, onReview }: { item: QueueItem; editable: boolean; onReview: () => void }) {
+function ContributionCard({
+  item,
+  editable,
+  onReview,
+}: {
+  item: QueueItem;
+  editable: boolean;
+  onReview: (decision: Decision) => void;
+}) {
   const toast = useToast();
   const late = item.status === 'PENDING' && item.waitingHours > SLA;
   const accountDays = daysBetween(item.user.createdAt);
+  const newAccount = accountDays < 2;
   const rep = item.user.reputation;
+  const reviewed = rep.approved + rep.rejected;
+  const hasProof = item.proofLinks.length > 0 || item.proofFiles.length > 0;
+
   return (
-    <article className="border-t-2 border-ink pt-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <article className="card overflow-hidden">
+      {/* Case + waiting time */}
+      <header className="flex flex-col gap-3 border-b border-line px-5 py-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <Link to={`/redaksi/kasus/${item.case.id}`} className="font-serif text-xl leading-tight text-ink hover:underline">
+          <Link
+            to={`/redaksi/kasus/${item.case.id}`}
+            className="text-subheading font-semibold leading-snug tracking-[-0.01em] text-ink hover:underline"
+          >
             {item.case.title}
           </Link>
-          <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] text-muted">
-            <span className="font-mono">{item.case.caseNumber}</span>
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[13px] text-muted">
+            <span className="font-mono text-xs">{item.case.caseNumber}</span>
             <span>Tahap kini: {STATUS_LABEL[item.case.currentStatus]}</span>
             {item.proposedStage && (
-              <Badge tone={item.proposedStage === item.case.currentStatus ? 'neutral' : 'accent'}>
+              <Badge tone={item.proposedStage === item.case.currentStatus ? 'neutral' : 'ink'}>
                 Usul: {STATUS_LABEL[item.proposedStage]}
               </Badge>
             )}
-          </p>
+          </div>
         </div>
         {item.status === 'PENDING' ? (
-          <span className={cx('inline-flex shrink-0 items-center gap-1.5 font-mono text-xs num', late ? 'text-warn' : 'text-muted')}>
-            <Clock className="size-3.5" /> menunggu {hoursLabel(item.waitingHours)}
+          <Badge tone={late ? 'warn' : 'neutral'} className="shrink-0 self-start">
+            <Clock /> menunggu <span className="num">{hoursLabel(item.waitingHours)}</span>
             {late && ' · lewat target'}
-          </span>
+          </Badge>
         ) : (
-          <Badge tone={item.status === 'APPROVED' ? 'ok' : 'danger'}>{item.status === 'APPROVED' ? 'Diterima' : 'Ditolak'}</Badge>
+          <Badge tone={item.status === 'APPROVED' ? 'ok' : 'danger'} className="shrink-0 self-start">
+            {item.status === 'APPROVED' ? <Check /> : <X />}
+            {item.status === 'APPROVED' ? 'Diterima' : 'Ditolak'}
+          </Badge>
         )}
-      </div>
+      </header>
 
-      <div className="mt-4 grid gap-5 lg:grid-cols-[minmax(0,1fr)_240px]">
-        <div className="min-w-0">
-          <p className="whitespace-pre-line text-[15px] leading-relaxed text-ink-soft">{item.description}</p>
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_260px]">
+        {/* Contribution body + evidence */}
+        <div className="min-w-0 space-y-4 px-5 py-5">
+          <p className="whitespace-pre-line text-body-lg leading-relaxed text-ink-soft">{item.description}</p>
 
-          {(item.proofLinks.length > 0 || item.proofFiles.length > 0) && (
-            <div className="mt-4">
+          {hasProof && (
+            <div>
               <p className="kicker">Bukti</p>
-              <ul className="mt-2 space-y-1.5 text-sm">
+              <ul className="mt-2 grid gap-2 sm:grid-cols-2">
                 {item.proofLinks.map((url) => (
-                  <li key={url}>
-                    <a href={url} target="_blank" rel="noopener noreferrer nofollow" className="link inline-flex items-center gap-1.5 break-all">
-                      <ExternalLink className="size-3.5 shrink-0" /> {hostOf(url)}
-                      <span className="text-faint">{url.replace(/^https?:\/\/[^/]+/, '').slice(0, 60)}</span>
+                  <li key={url} className="min-w-0">
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer nofollow"
+                      className="tile group flex min-w-0 items-center gap-3 px-3 py-2.5 transition-colors hover:bg-ink/[0.07]"
+                    >
+                      <span className="grid size-8 shrink-0 place-items-center rounded-full bg-raised text-muted shadow-card">
+                        <Link2 className="size-4" aria-hidden />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-medium text-ink">{hostOf(url)}</span>
+                        <span className="block truncate font-mono text-xs text-muted">
+                          {url.replace(/^https?:\/\/[^/]+/, '').slice(0, 60) || '/'}
+                        </span>
+                      </span>
+                      <ExternalLink className="size-3.5 shrink-0 text-muted group-hover:text-ink" aria-hidden />
                     </a>
                   </li>
                 ))}
                 {item.proofFiles.map((f) => (
-                  <li key={f.index}>
+                  <li key={f.index} className="min-w-0">
                     <button
-                      className="link inline-flex items-center gap-1.5 text-left"
+                      type="button"
+                      className="tile group flex w-full min-w-0 items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-ink/[0.07]"
                       onClick={() =>
                         downloadProtected(`/api/admin/contributions/${item.id}/files/${f.index}`, f.fileName).catch(() =>
                           toast('File tidak dapat diunduh.', 'danger'),
                         )
                       }
                     >
-                      <FileText className="size-3.5 shrink-0" /> {f.fileName}
-                      <span className="font-mono text-[11px] text-faint">{fmtBytes(f.size)}</span>
-                      <Download className="size-3 text-faint" />
+                      <span className="grid size-8 shrink-0 place-items-center rounded-full bg-raised text-muted shadow-card">
+                        <FileText className="size-4" aria-hidden />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-medium text-ink">{f.fileName}</span>
+                        <span className="block font-mono text-xs text-muted">{fmtBytes(f.size)}</span>
+                      </span>
+                      <Download className="size-3.5 shrink-0 text-muted group-hover:text-ink" aria-hidden />
                     </button>
                   </li>
                 ))}
@@ -285,41 +354,64 @@ function ContributionCard({ item, editable, onReview }: { item: QueueItem; edita
           )}
 
           {item.status === 'REJECTED' && item.rejectionReason && (
-            <p className="mt-4 border-l-2 border-danger pl-3 text-[13px] text-ink-soft">
-              <span className="font-medium text-danger">Alasan penolakan:</span> {item.rejectionReason}
-            </p>
+            <div className="rounded-lg bg-danger-wash px-4 py-3 text-[13px] text-ink-soft">
+              <p className="mb-0.5 font-medium text-danger">Alasan penolakan</p>
+              {item.rejectionReason}
+            </div>
           )}
           {item.status !== 'PENDING' && (
-            <p className="mt-3 text-xs text-faint">
+            <p className="text-xs text-muted">
               Ditinjau {item.reviewedBy ? `oleh ${item.reviewedBy.name} ` : ''}· {fmtDateTime(item.reviewedAt)}
               {item.appliedStageId && ' · dijadikan tahapan'}
             </p>
           )}
         </div>
 
-        <aside className="border-line text-[13px] lg:border-l lg:pl-5">
+        {/* Contributor */}
+        <aside className="border-t border-line bg-alt px-5 py-5 text-[13px] lg:border-l lg:border-t-0">
           <p className="kicker">Kontributor</p>
-          <p className="mt-1.5 font-medium text-ink">{item.user.name}</p>
-          <a href={`mailto:${item.user.email}`} className="link break-all text-muted">
-            {item.user.email}
-          </a>
-          <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 font-mono text-[11.5px] num">
+          <div className="mt-2.5 flex items-center gap-3">
+            <Initials name={item.user.name} />
+            <div className="min-w-0">
+              <p className="truncate font-medium text-ink">{item.user.name}</p>
+              <a href={`mailto:${item.user.email}`} className="block truncate text-muted transition-colors hover:text-ink">
+                {item.user.email}
+              </a>
+            </div>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {reviewed === 0 ? (
+              <Badge tone="outline">Kontributor baru</Badge>
+            ) : (
+              <Badge tone="outline">
+                <span className="num">{rep.acceptanceRate === null ? '—' : `${rep.acceptanceRate}%`}</span> diterima
+              </Badge>
+            )}
+            {newAccount && <Badge tone="warn">Akun baru</Badge>}
+          </div>
+          <dl className="mt-4 grid grid-cols-2 gap-x-3 gap-y-1.5 num">
             <dt className="text-muted">Usia akun</dt>
-            <dd className={cx('text-right', accountDays < 2 ? 'text-warn' : 'text-ink')}>{accountDays} hari</dd>
+            <dd className={cx('text-right font-medium', newAccount ? 'text-ember' : 'text-ink')}>{accountDays} hari</dd>
             <dt className="text-muted">Diterima</dt>
-            <dd className="text-right text-ink">{rep.approved}</dd>
+            <dd className="text-right font-medium text-ink">{rep.approved}</dd>
             <dt className="text-muted">Ditolak</dt>
-            <dd className="text-right text-ink">{rep.rejected}</dd>
+            <dd className="text-right font-medium text-ink">{rep.rejected}</dd>
             <dt className="text-muted">Tingkat terima</dt>
-            <dd className="text-right text-ink">{rep.acceptanceRate === null ? '—' : `${rep.acceptanceRate}%`}</dd>
+            <dd className="text-right font-medium text-ink">{rep.acceptanceRate === null ? '—' : `${rep.acceptanceRate}%`}</dd>
           </dl>
-          {item.status === 'PENDING' && editable && (
-            <Button className="mt-4 w-full" onClick={onReview}>
-              Tinjau
-            </Button>
-          )}
         </aside>
       </div>
+
+      {item.status === 'PENDING' && editable && (
+        <footer className="flex flex-col-reverse gap-2 border-t border-line px-5 py-3 sm:flex-row sm:items-center sm:justify-end">
+          <Button variant="danger" onClick={() => onReview('REJECTED')}>
+            <X /> Tolak
+          </Button>
+          <Button onClick={() => onReview('APPROVED')}>
+            <Check /> Terima
+          </Button>
+        </footer>
+      )}
     </article>
   );
 }
@@ -329,7 +421,7 @@ export default function AdminModeration({ loaderData }: Route.ComponentProps) {
   const [params] = useSearchParams();
   const editable = useCanEdit();
   const revalidator = useRevalidator();
-  const [reviewing, setReviewing] = useState<QueueItem | null>(null);
+  const [reviewing, setReviewing] = useState<{ item: QueueItem; decision: Decision } | null>(null);
   const hrefFor = (s: ContributionStatus, page?: number) => {
     const next = new URLSearchParams(params);
     if (s === 'PENDING') next.delete('status');
@@ -359,20 +451,31 @@ export default function AdminModeration({ loaderData }: Route.ComponentProps) {
       />
 
       {items.length === 0 ? (
-        <EmptyState title={status === 'PENDING' ? 'Antrean kosong' : 'Belum ada data'}>
+        <EmptyState title={status === 'PENDING' ? 'Antrean kosong' : 'Belum ada data'} icon={<Inbox />}>
           {status === 'PENDING' ? 'Semua kontribusi sudah ditinjau.' : 'Kontribusi yang sudah ditinjau akan muncul di sini.'}
         </EmptyState>
       ) : (
-        <div className="space-y-10">
+        <div className="space-y-4">
           {items.map((item) => (
-            <ContributionCard key={item.id} item={item} editable={editable} onReview={() => setReviewing(item)} />
+            <ContributionCard
+              key={item.id}
+              item={item}
+              editable={editable}
+              onReview={(decision) => setReviewing({ item, decision })}
+            />
           ))}
           <Pagination page={meta.page} totalPages={meta.totalPages} hrefFor={(p) => hrefFor(status, p)} />
         </div>
       )}
 
       {reviewing && (
-        <ReviewDialog key={reviewing.id} item={reviewing} onClose={() => setReviewing(null)} onDone={() => revalidator.revalidate()} />
+        <ReviewDialog
+          key={reviewing.item.id}
+          item={reviewing.item}
+          initialDecision={reviewing.decision}
+          onClose={() => setReviewing(null)}
+          onDone={() => revalidator.revalidate()}
+        />
       )}
     </div>
   );

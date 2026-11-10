@@ -4,7 +4,7 @@ import { Alert, Button, Field, Input, Select, Textarea } from '~/components/ui';
 import { ApiError } from '~/lib/api';
 import { STATUS_HINT, STATUS_LABEL, STATUS_ORDER, cx, toInputDate } from '~/lib/format';
 import type { CaseStatus, Category, Defendant } from '~/lib/types';
-import type { AdminCase } from './shared';
+import { FormCard, type AdminCase } from './shared';
 
 export interface CasePayload {
   caseNumber: string;
@@ -90,157 +90,170 @@ export function CaseForm({
   };
 
   return (
-    <form onSubmit={submit} className="space-y-8" noValidate>
-      {formError && <Alert tone="danger" title="Belum tersimpan">{formError}</Alert>}
+    <form onSubmit={submit} className="space-y-5" noValidate>
+      {formError && (
+        <Alert tone="danger" title="Belum tersimpan">
+          {formError}
+        </Alert>
+      )}
 
-      <fieldset disabled={readOnly}>
-        <legend className="kicker mb-4">Identitas perkara</legend>
+      <FormCard disabled={readOnly} title="Identitas perkara" description="Judul, nomor, kategori, dan uraian yang tampil di halaman publik.">
         <div className="grid gap-5 md:grid-cols-2">
-        <Field label="Judul kasus" error={errors.title} htmlFor="cf-title" className="md:col-span-2">
-          <Input id="cf-title" value={form.title} onChange={(e) => set('title', e.target.value)} invalid={!!errors.title} required />
-        </Field>
-        <Field label="Nomor perkara" hint="Nomor register pengadilan atau laporan polisi." error={errors.caseNumber} htmlFor="cf-number">
-          <Input
-            id="cf-number"
-            className="font-mono text-sm"
-            value={form.caseNumber}
-            onChange={(e) => set('caseNumber', e.target.value)}
-            invalid={!!errors.caseNumber}
-            required
-          />
-        </Field>
-        <Field label="Kategori" error={errors.categoryId} htmlFor="cf-category">
-          <Select id="cf-category" value={form.categoryId} onChange={(e) => set('categoryId', e.target.value)} invalid={!!errors.categoryId} required>
-            <option value="" disabled>
-              Pilih kategori
-            </option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
+          <Field label="Judul kasus" error={errors.title} htmlFor="cf-title" className="md:col-span-2">
+            <Input id="cf-title" value={form.title} onChange={(e) => set('title', e.target.value)} invalid={!!errors.title} required />
+          </Field>
+          <Field label="Nomor perkara" hint="Nomor register pengadilan atau laporan polisi." error={errors.caseNumber} htmlFor="cf-number">
+            <Input
+              id="cf-number"
+              className="font-mono"
+              value={form.caseNumber}
+              onChange={(e) => set('caseNumber', e.target.value)}
+              invalid={!!errors.caseNumber}
+              required
+            />
+          </Field>
+          <Field label="Kategori" error={errors.categoryId} htmlFor="cf-category">
+            <Select id="cf-category" value={form.categoryId} onChange={(e) => set('categoryId', e.target.value)} invalid={!!errors.categoryId} required>
+              <option value="" disabled>
+                Pilih kategori
               </option>
-            ))}
-          </Select>
-        </Field>
-        <Field
-          label="Ringkasan"
-          optional
-          htmlFor="cf-summary"
-          error={errors.summary}
-          hint={
-            <span className={cx('num', form.summary.length > SUMMARY_MAX && 'text-danger')}>
-              Satu kalimat untuk kartu kasus · {form.summary.length}/{SUMMARY_MAX}
-            </span>
-          }
-          className="md:col-span-2"
-        >
-          <Textarea id="cf-summary" rows={2} maxLength={SUMMARY_MAX} value={form.summary} onChange={(e) => set('summary', e.target.value)} />
-        </Field>
-        <Field label="Deskripsi" error={errors.description} htmlFor="cf-desc" hint="Latar perkara secara netral. Hindari menyimpulkan kesalahan sebelum ada putusan." className="md:col-span-2">
-          <Textarea id="cf-desc" rows={6} value={form.description} onChange={(e) => set('description', e.target.value)} invalid={!!errors.description} />
-        </Field>
-        </div>
-      </fieldset>
-
-      <fieldset disabled={readOnly} className="border-t border-line pt-6">
-        <legend className="kicker float-left mb-4 w-full">Status &amp; lembaga</legend>
-        <div className="grid clear-both gap-5 md:grid-cols-2">
-        <Field
-          label="Tahap saat ini"
-          htmlFor="cf-status"
-          hint={isEdit ? 'Lebih baik tambah tahapan di linimasa; status ikut berubah otomatis.' : STATUS_HINT[form.currentStatus]}
-        >
-          <Select id="cf-status" value={form.currentStatus} onChange={(e) => set('currentStatus', e.target.value as CaseStatus)}>
-            {STATUS_ORDER.map((s) => (
-              <option key={s} value={s}>
-                {STATUS_LABEL[s]}
-              </option>
-            ))}
-          </Select>
-        </Field>
-        <Field label="Tanggal mulai perkara" optional htmlFor="cf-filed" error={errors.filedAt}>
-          <Input id="cf-filed" type="date" value={form.filedAt} onChange={(e) => set('filedAt', e.target.value)} />
-        </Field>
-        {statusChanged && (
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </Select>
+          </Field>
           <Field
-            label="Alasan perubahan status"
-            htmlFor="cf-reason"
-            error={errors.reason}
-            hint="Ditampilkan di riwayat publik kasus, misalnya “Putusan dibacakan 12 Mei; sumber: SIPP PN Jakpus”."
+            label="Ringkasan"
+            optional
+            htmlFor="cf-summary"
+            error={errors.summary}
+            hint={
+              <span className={cx('num', form.summary.length > SUMMARY_MAX && 'text-danger')}>
+                Satu kalimat untuk kartu kasus · {form.summary.length}/{SUMMARY_MAX}
+              </span>
+            }
             className="md:col-span-2"
           >
-            <Textarea id="cf-reason" rows={2} value={form.reason} onChange={(e) => set('reason', e.target.value)} invalid={!!errors.reason} />
+            <Textarea id="cf-summary" rows={2} maxLength={SUMMARY_MAX} value={form.summary} onChange={(e) => set('summary', e.target.value)} />
           </Field>
-        )}
-        <Field label="Lembaga penegak hukum" optional htmlFor="cf-inst" hint="Mis. KPK, Kejaksaan Agung, Polda Jawa Barat">
-          <Input id="cf-inst" value={form.institution} onChange={(e) => set('institution', e.target.value)} />
-        </Field>
-        <Field label="Pengadilan" optional htmlFor="cf-court">
-          <Input id="cf-court" value={form.court} onChange={(e) => set('court', e.target.value)} />
-        </Field>
-        <Field label="Wilayah" optional htmlFor="cf-region">
-          <Input id="cf-region" value={form.region} onChange={(e) => set('region', e.target.value)} />
-        </Field>
+          <Field
+            label="Deskripsi"
+            error={errors.description}
+            htmlFor="cf-desc"
+            hint="Latar perkara secara netral. Hindari menyimpulkan kesalahan sebelum ada putusan."
+            className="md:col-span-2"
+          >
+            <Textarea id="cf-desc" rows={6} value={form.description} onChange={(e) => set('description', e.target.value)} invalid={!!errors.description} />
+          </Field>
         </div>
-      </fieldset>
+      </FormCard>
 
-      <fieldset disabled={readOnly} className="border-t border-line pt-6">
-        <legend className="kicker float-left mb-1 w-full">Pihak terkait</legend>
-        <p className="clear-both mb-4 text-[13px] text-muted">
-          Tulis status hukum secara tepat (terlapor, tersangka, terdakwa, terpidana, tergugat). Nama akan tampil publik.
-        </p>
+      <FormCard disabled={readOnly} title="Status & lembaga" description="Tahap proses hukum dan lembaga yang menanganinya.">
+        <div className="grid gap-5 md:grid-cols-2">
+          <Field
+            label="Tahap saat ini"
+            htmlFor="cf-status"
+            hint={isEdit ? 'Lebih baik tambah tahapan di linimasa; status ikut berubah otomatis.' : STATUS_HINT[form.currentStatus]}
+          >
+            <Select id="cf-status" value={form.currentStatus} onChange={(e) => set('currentStatus', e.target.value as CaseStatus)}>
+              {STATUS_ORDER.map((s) => (
+                <option key={s} value={s}>
+                  {STATUS_LABEL[s]}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="Tanggal mulai perkara" optional htmlFor="cf-filed" error={errors.filedAt}>
+            <Input id="cf-filed" type="date" value={form.filedAt} onChange={(e) => set('filedAt', e.target.value)} />
+          </Field>
+          {statusChanged && (
+            <Field
+              label="Alasan perubahan status"
+              htmlFor="cf-reason"
+              error={errors.reason}
+              hint="Ditampilkan di riwayat publik kasus, misalnya “Putusan dibacakan 12 Mei; sumber: SIPP PN Jakpus”."
+              className="md:col-span-2"
+            >
+              <Textarea id="cf-reason" rows={2} value={form.reason} onChange={(e) => set('reason', e.target.value)} invalid={!!errors.reason} />
+            </Field>
+          )}
+          <Field label="Lembaga penegak hukum" optional htmlFor="cf-inst" hint="Mis. KPK, Kejaksaan Agung, Polda Jawa Barat">
+            <Input id="cf-inst" value={form.institution} onChange={(e) => set('institution', e.target.value)} />
+          </Field>
+          <Field label="Pengadilan" optional htmlFor="cf-court">
+            <Input id="cf-court" value={form.court} onChange={(e) => set('court', e.target.value)} />
+          </Field>
+          <Field label="Wilayah" optional htmlFor="cf-region">
+            <Input id="cf-region" value={form.region} onChange={(e) => set('region', e.target.value)} />
+          </Field>
+        </div>
+      </FormCard>
+
+      <FormCard
+        disabled={readOnly}
+        title="Pihak terkait"
+        description="Tulis status hukum secara tepat (terlapor, tersangka, terdakwa, terpidana, tergugat). Nama akan tampil publik."
+      >
         <div className="space-y-3">
-          {form.defendants.length === 0 && <p className="text-sm text-faint">Belum ada pihak.</p>}
+          {form.defendants.length === 0 && <p className="tile px-4 py-3 text-sm text-muted">Belum ada pihak.</p>}
           {form.defendants.map((d, i) => (
-            <div key={i} className="grid gap-2 border-l-2 border-line-strong pl-3 sm:grid-cols-[1fr_1fr_auto]">
-              <Input
-                aria-label={`Nama pihak ${i + 1}`}
-                placeholder="Nama"
-                value={d.name}
-                onChange={(e) => setDefendant(i, { name: e.target.value })}
-                invalid={!!errors[`defendants.${i}.name`]}
-              />
-              <Input
-                aria-label={`Peran pihak ${i + 1}`}
-                placeholder="Peran / status hukum"
-                value={d.role}
-                onChange={(e) => setDefendant(i, { role: e.target.value })}
-                invalid={!!errors[`defendants.${i}.role`]}
-              />
-              <Button
-                variant="ghost"
-                size="md"
-                aria-label={`Hapus pihak ${i + 1}`}
-                onClick={() => setForm((f) => ({ ...f, defendants: f.defendants.filter((_, j) => j !== i) }))}
-              >
-                <Trash2 className="size-4" />
-              </Button>
-              <Input
-                aria-label={`Keterangan pihak ${i + 1}`}
-                placeholder="Keterangan singkat (opsional)"
-                value={d.description ?? ''}
-                onChange={(e) => setDefendant(i, { description: e.target.value })}
-                className="sm:col-span-2"
-              />
+            <div key={i} className="rounded-lg border border-line p-3">
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+                <Input
+                  aria-label={`Nama pihak ${i + 1}`}
+                  placeholder="Nama"
+                  value={d.name}
+                  onChange={(e) => setDefendant(i, { name: e.target.value })}
+                  invalid={!!errors[`defendants.${i}.name`]}
+                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-10 text-muted hover:bg-danger-wash hover:text-danger sm:col-start-3 sm:row-start-1"
+                  aria-label={`Hapus pihak ${i + 1}`}
+                  onClick={() => setForm((f) => ({ ...f, defendants: f.defendants.filter((_, j) => j !== i) }))}
+                >
+                  <Trash2 />
+                </Button>
+                <Input
+                  aria-label={`Peran pihak ${i + 1}`}
+                  placeholder="Peran / status hukum"
+                  value={d.role}
+                  onChange={(e) => setDefendant(i, { role: e.target.value })}
+                  invalid={!!errors[`defendants.${i}.role`]}
+                  className="col-span-2 sm:col-span-1 sm:col-start-2 sm:row-start-1"
+                />
+                <Input
+                  aria-label={`Keterangan pihak ${i + 1}`}
+                  placeholder="Keterangan singkat (opsional)"
+                  value={d.description ?? ''}
+                  onChange={(e) => setDefendant(i, { description: e.target.value })}
+                  className="col-span-2"
+                />
+              </div>
               {(errors[`defendants.${i}.name`] || errors[`defendants.${i}.role`]) && (
-                <p className="text-[13px] text-danger sm:col-span-3">
-                  {errors[`defendants.${i}.name`] || errors[`defendants.${i}.role`]}
-                </p>
+                <p className="mt-2 text-[13px] text-danger">{errors[`defendants.${i}.name`] || errors[`defendants.${i}.role`]}</p>
               )}
             </div>
           ))}
         </div>
         <Button
-          variant="outline"
+          variant="secondary"
           size="sm"
-          className="mt-3"
+          className="mt-4"
           onClick={() => setForm((f) => ({ ...f, defendants: [...f.defendants, { name: '', role: '', description: '' }] }))}
         >
-          <Plus className="size-4" /> Tambah pihak
+          <Plus /> Tambah pihak
         </Button>
-      </fieldset>
+      </FormCard>
 
       {!readOnly && (
-        <div className="sticky bottom-0 -mx-4 flex justify-end gap-2 border-t border-line bg-paper/95 px-4 py-3 backdrop-blur sm:mx-0 sm:px-0">
+        <div className="sticky bottom-4 z-20 flex items-center justify-between gap-3 rounded-3xl border border-line bg-raised/90 py-2 pl-5 pr-2 shadow-pop backdrop-blur">
+          <p className={cx('min-w-0 truncate text-[13px]', statusChanged ? 'font-medium text-ink' : 'text-muted')}>
+            {statusChanged ? 'Status berubah: alasan wajib diisi.' : isEdit ? 'Perubahan tercatat di riwayat kasus.' : 'Tahapan pertama dibuat otomatis.'}
+          </p>
           <Button type="submit" loading={busy}>
             {submitLabel}
           </Button>

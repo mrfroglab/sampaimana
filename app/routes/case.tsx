@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { data, Link, useNavigate } from 'react-router';
+import type { ReactNode } from 'react';
 import {
   ArrowRight,
   BadgeCheck,
@@ -7,9 +8,9 @@ import {
   BellRing,
   CalendarClock,
   Check,
+  Clock,
   ExternalLink,
   FileText,
-  Link2,
   MessageSquareWarning,
   Scale,
   Send,
@@ -34,7 +35,22 @@ import type { CaseDetail, Source, Stage } from '~/lib/types';
 import { api, useSession } from '~/lib/session';
 import { StatusRail } from '~/components/StatusRail';
 import { RevisionList } from '~/components/RevisionList';
-import { Alert, Badge, Button, CategoryTag, Dialog, Field, Input, LinkButton, RelTime, Select, Textarea, useToast } from '~/components/ui';
+import {
+  Alert,
+  Badge,
+  Breadcrumbs,
+  Button,
+  CategoryTag,
+  Dialog,
+  Field,
+  Input,
+  LinkButton,
+  RelTime,
+  Select,
+  StatBlock,
+  Textarea,
+  useToast,
+} from '~/components/ui';
 
 export async function loader({ params }: Route.LoaderArgs) {
   try {
@@ -57,106 +73,152 @@ export const meta: Route.MetaFunction = ({ data: d }) => {
   });
 };
 
+/** Card with a header strip. Renders an h2 so the outline stays h1 → h2 → h3. */
+function SectionCard({
+  id,
+  title,
+  description,
+  action,
+  className,
+  children,
+}: {
+  id: string;
+  title: ReactNode;
+  description?: ReactNode;
+  action?: ReactNode;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section aria-labelledby={id} className={cx('card overflow-hidden', className)}>
+      <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-4 sm:px-6">
+        <div className="min-w-0">
+          <h2 id={id} className="text-[15px] font-semibold tracking-[-0.01em] text-ink">
+            {title}
+          </h2>
+          {description && <p className="mt-0.5 text-[13px] text-muted">{description}</p>}
+        </div>
+        {action}
+      </div>
+      {children}
+    </section>
+  );
+}
+
 function SourceItem({ source }: { source: Source }) {
   return (
-    <li className="flex gap-3 py-2.5">
-      {source.isVerified ? (
-        <BadgeCheck className="mt-0.5 size-4 shrink-0 text-ok" aria-label="Terverifikasi" />
-      ) : (
-        <Link2 className="mt-0.5 size-4 shrink-0 text-faint" aria-hidden />
-      )}
-      <div className="min-w-0">
-        <a href={source.url} target="_blank" rel="noopener noreferrer nofollow" className="link text-[14.5px] leading-snug text-ink">
-          {source.title}
-          <ExternalLink className="ml-1 inline size-3 -translate-y-px text-faint" aria-hidden />
-        </a>
-        <p className="mt-0.5 flex flex-wrap gap-x-2 text-xs text-muted">
-          <span>{source.publisher || hostOf(source.url)}</span>
-          <span aria-hidden>·</span>
-          <span>{SOURCE_TYPE_LABEL[source.type]}</span>
-          {source.publishedAt && (
-            <>
-              <span aria-hidden>·</span>
-              <span>{fmtShort(source.publishedAt)}</span>
-            </>
-          )}
-          {source.isVerified && (
-            <>
-              <span aria-hidden>·</span>
-              <span className="text-ok">terverifikasi redaksi</span>
-            </>
-          )}
-        </p>
+    <li className="py-3 first:pt-0 last:pb-0">
+      <a
+        href={source.url}
+        target="_blank"
+        rel="noopener noreferrer nofollow"
+        className="text-sm font-medium leading-snug text-ink decoration-line-strong underline-offset-[3px] [overflow-wrap:anywhere] hover:underline"
+      >
+        {source.title}
+        <ExternalLink className="ml-1 inline size-3 -translate-y-px text-muted" aria-hidden />
+      </a>
+      <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-[13px] text-muted">
+        <span className="min-w-0 max-w-full truncate">{source.publisher || hostOf(source.url)}</span>
+        <span aria-hidden className="text-faint">
+          ·
+        </span>
+        <span>{SOURCE_TYPE_LABEL[source.type]}</span>
+        {source.publishedAt && (
+          <>
+            <span aria-hidden className="text-faint">
+              ·
+            </span>
+            <span className="num">{fmtShort(source.publishedAt)}</span>
+          </>
+        )}
+        {source.isVerified && (
+          <Badge tone="outline">
+            <Check aria-hidden /> Terverifikasi
+          </Badge>
+        )}
       </div>
     </li>
   );
 }
 
-function TimelineStage({ stage, slug, isLatest }: { stage: Stage; slug: string; isLatest: boolean }) {
+function TimelineStage({ stage, slug }: { stage: Stage; slug: string }) {
   const active = stage.status === 'AKTIF';
   // An active PUTUSAN stage is the final state, not something still "running".
   const verdict = active && stage.stageType === 'PUTUSAN';
   const end = stage.endedAt ?? (active && !verdict ? new Date().toISOString() : null);
   const duration = end ? daysBetween(stage.startedAt, end) : null;
   const overdue = active && stage.dueAt && new Date(stage.dueAt) < new Date();
+  const tone = active ? 'ink' : stage.status === 'SELESAI' ? 'neutral' : 'outline';
   return (
-    <li className="group relative grid grid-cols-[22px_1fr] gap-x-5 pb-10 last:pb-0 sm:grid-cols-[110px_22px_1fr]">
-      <div className="hidden pt-0.5 text-right sm:block">
-        <p className="font-mono text-[12px] text-ink num">{fmtShort(stage.startedAt)}</p>
-        {stage.endedAt && <p className="mt-0.5 font-mono text-[11px] text-faint num">s.d. {fmtShort(stage.endedAt)}</p>}
-      </div>
-      <div className="relative flex justify-center">
+    <li className="group relative grid grid-cols-[12px_minmax(0,1fr)] gap-x-4 pb-8 last:pb-0 sm:gap-x-5" aria-current={active ? 'step' : undefined}>
+      <div className="relative flex justify-center" aria-hidden>
         <span
           className={cx(
-            'relative z-10 mt-1 size-[14px] rounded-full border-2',
-            active ? (stage.stageType === 'PUTUSAN' ? 'border-ink bg-ink' : 'animate-pulse-dot border-accent bg-accent') : stage.status === 'SELESAI' ? 'border-ink bg-ink' : 'border-line-strong bg-paper',
+            'relative z-10 mt-1.5 size-2.5 rounded-full',
+            active
+              ? 'bg-ink ring-4 ring-ink/10'
+              : stage.status === 'SELESAI'
+                ? 'bg-ink'
+                : 'border border-line-strong bg-raised',
           )}
         />
-        <span className="absolute bottom-[-6px] top-5 w-[2px] bg-line-strong group-last:hidden" aria-hidden />
+        <span className="absolute -bottom-1.5 top-[22px] w-px bg-line group-last:hidden" />
       </div>
-      <div className={cx('min-w-0 pb-1', isLatest && 'rounded-[3px]')}>
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="kicker text-ink">{STATUS_LABEL[stage.stageType]}</span>
-          <Badge tone={active ? (stage.stageType === 'PUTUSAN' ? 'ink' : 'accent') : stage.status === 'SELESAI' ? 'neutral' : 'warn'}>
-            {verdict ? 'Diputus' : STAGE_STATUS_LABEL[stage.status]}
-          </Badge>
-          <span className="font-mono text-[11px] text-muted sm:hidden">{fmtShort(stage.startedAt)}</span>
-        </div>
-        {stage.title && <h3 className="mt-2 font-serif text-[1.4rem] leading-snug text-ink">{stage.title}</h3>}
-        {stage.summary && <p className="mt-2 leading-relaxed text-ink-soft">{stage.summary}</p>}
 
-        <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[13px] text-muted">
-          {duration !== null && (
-            <span>
-              {active ? 'Berjalan' : 'Berlangsung'} <span className="text-ink-soft">{fmtDuration(duration)}</span>
-            </span>
-          )}
-          {stage.dueAt && (
-            <span className={cx('inline-flex items-center gap-1', overdue && 'font-medium text-warn')}>
-              <CalendarClock className="size-3.5" />
-              {overdue ? 'Lewat tenggat' : 'Tenggat'} {fmtDate(stage.dueAt)}
-            </span>
-          )}
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+          <h3 className="text-sm font-semibold text-ink">{STATUS_LABEL[stage.stageType]}</h3>
+          <Badge tone={tone}>{verdict ? 'Diputus' : STAGE_STATUS_LABEL[stage.status]}</Badge>
+          <span className="font-mono text-[12px] text-muted num">
+            {fmtShort(stage.startedAt)}
+            {stage.endedAt && ` – ${fmtShort(stage.endedAt)}`}
+          </span>
         </div>
+        {stage.title && (
+          <p className="mt-2 text-subheading font-semibold leading-snug tracking-[-0.015em] text-ink">{stage.title}</p>
+        )}
+        {stage.summary && <p className="mt-1.5 text-[15px] leading-relaxed text-ink-soft">{stage.summary}</p>}
+
+        {(duration !== null || stage.dueAt) && (
+          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-muted">
+            {duration !== null && (
+              <span className="inline-flex items-center gap-1.5">
+                <Clock className="size-3.5" aria-hidden />
+                {active ? 'Berjalan' : 'Berlangsung'} <span className="text-ink-soft">{fmtDuration(duration)}</span>
+              </span>
+            )}
+            {stage.dueAt && (
+              <span className={cx('inline-flex items-center gap-1.5', overdue && 'font-medium text-ember')}>
+                <CalendarClock className="size-3.5" aria-hidden />
+                {overdue ? 'Lewat tenggat' : 'Tenggat'} {fmtDate(stage.dueAt)}
+              </span>
+            )}
+          </div>
+        )}
 
         {stage.article && (
           <Link
             to={`/kasus/${slug}/tahap/${stage.id}`}
-            className="group mt-4 flex items-start gap-3 border border-line bg-raised p-4 transition-colors hover:border-ink"
+            className="group/article mt-4 flex items-center gap-3 rounded-lg border border-line p-3 transition-colors hover:border-line-strong hover:bg-ink/[0.03]"
           >
-            <FileText className="mt-0.5 size-5 shrink-0 text-accent" />
-            <span className="min-w-0">
-              <span className="kicker">Penjelasan redaksi</span>
-              <span className="mt-1 block font-serif text-[1.1rem] leading-snug text-ink group-hover:underline">{stage.article.title}</span>
+            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-ink/[0.06] text-ink">
+              <FileText className="size-4" aria-hidden />
             </span>
-            <ArrowRight className="ml-auto mt-1 size-4 shrink-0 text-faint transition-transform group-hover:translate-x-0.5" />
+            <span className="min-w-0 flex-1">
+              <span className="block text-[13px] text-muted">Penjelasan redaksi</span>
+              <span className="mt-0.5 block text-sm font-medium leading-snug text-ink">{stage.article.title}</span>
+            </span>
+            <ArrowRight
+              className="size-4 shrink-0 text-muted transition-transform group-hover/article:translate-x-0.5 group-hover/article:text-ink"
+              aria-hidden
+            />
           </Link>
         )}
 
         {stage.sources.length > 0 && (
-          <div className="mt-4">
+          <div className="tile mt-4 p-4">
             <p className="kicker">Sumber tahap ini</p>
-            <ul className="mt-1 divide-y divide-line">
+            <ul className="mt-3 divide-y divide-line">
               {stage.sources.map((s) => (
                 <SourceItem key={s.id} source={s} />
               ))}
@@ -218,7 +280,7 @@ function FollowButton({ item }: { item: CaseDetail }) {
     <Button variant={isFollowing ? 'outline' : 'primary'} onClick={toggle} loading={busy} aria-pressed={isFollowing}>
       {isFollowing ? <BellRing className="size-4" /> : <BellPlus className="size-4" />}
       {isFollowing ? 'Mengikuti' : 'Ikuti kasus'}
-      <span className={cx('font-mono text-xs num', isFollowing ? 'text-muted' : 'text-paper/70')}>{count}</span>
+      <span className={cx('text-xs num', isFollowing ? 'text-muted' : 'text-on-ink/60')}>{count}</span>
     </Button>
   );
 }
@@ -321,7 +383,7 @@ function CorrectionDialog({ open, onClose, slug }: { open: boolean; onClose: () 
           </Field>
           {/* honeypot */}
           <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden />
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex flex-wrap justify-end gap-2 pt-2">
             <Button variant="ghost" onClick={onClose}>
               Batal
             </Button>
@@ -335,6 +397,9 @@ function CorrectionDialog({ open, onClose, slug }: { open: boolean; onClose: () 
   );
 }
 
+// Metric values on the status card are dates/durations, so step StatBlock down a size.
+const statFit = '[&_dd:first-of-type]:text-heading-sm sm:[&_dd:first-of-type]:text-heading';
+
 export default function CasePage({ loaderData }: Route.ComponentProps) {
   const { item } = loaderData;
   const [correctionOpen, setCorrectionOpen] = useState(false);
@@ -345,190 +410,190 @@ export default function CasePage({ loaderData }: Route.ComponentProps) {
   const totalDays = item.filedAt ? daysBetween(item.filedAt, decided && active ? active.startedAt : new Date()) : null;
   const overdue = !decided && active?.dueAt && new Date(active.dueAt) < new Date();
   const verified = [...item.sources, ...item.stages.flatMap((s) => s.sources)].filter((s) => s.isVerified).length;
+  const facts = (
+    [
+      ['Nomor perkara', item.caseNumber, true],
+      ['Lembaga penangan', item.institution],
+      ['Pengadilan', item.court],
+      ['Wilayah', item.region],
+      ['Mulai', item.filedAt && fmtDate(item.filedAt)],
+    ] as const
+  ).filter(([, v]) => v);
 
   return (
-    <article>
-      <header className="border-b border-line paper-grain">
-        <div className="container-page pb-10 pt-8">
-          <nav aria-label="Remah roti" className="flex items-center gap-2 text-[13px] text-muted">
-            <Link to="/kasus" className="hover:text-ink">
-              Kasus
-            </Link>
-            <span aria-hidden>/</span>
-            <Link to={`/kasus?category=${item.category.slug}`} className="hover:text-ink">
-              {item.category.name}
-            </Link>
-          </nav>
+    <article className="container-page pb-20">
+      <header className="pb-8 pt-8 sm:pb-10 sm:pt-12">
+        <Breadcrumbs
+          items={[
+            { to: '/kasus', label: 'Kasus' },
+            { to: `/kasus?category=${item.category.slug}`, label: item.category.name },
+            { label: item.caseNumber },
+          ]}
+        />
 
-          <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2">
-            <CategoryTag name={item.category.name} color={item.category.color} />
-            <span className="font-mono text-[12px] text-muted">{item.caseNumber}</span>
-          </div>
-          <h1 className="mt-3 max-w-4xl font-serif text-headline font-medium tracking-[-0.02em] text-ink">{item.title}</h1>
-          {item.summary && <p className="mt-4 max-w-3xl font-serif text-xl leading-relaxed text-ink-soft">{item.summary}</p>}
+        <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2">
+          <CategoryTag name={item.category.name} color={item.category.color} />
+          <span className="h-3.5 w-px bg-line-strong" aria-hidden />
+          <span className="min-w-0 break-all font-mono text-[13px] text-muted">{item.caseNumber}</span>
+        </div>
+        <h1 className="mt-3 max-w-4xl text-heading font-semibold text-ink [overflow-wrap:anywhere] sm:text-heading-lg">{item.title}</h1>
+        {item.summary && <p className="mt-4 max-w-3xl text-body-lg leading-relaxed text-muted">{item.summary}</p>}
 
-          <div className="mt-6 flex flex-wrap gap-2">
-            <FollowButton item={item} />
-            <ShareButton title={item.title} />
-            <LinkButton to={`/kontribusi/baru?kasus=${item.slug}`} variant="ghost">
-              <Send className="size-4" /> Kirim kabar terbaru
-            </LinkButton>
-          </div>
-
-          <div className="mt-10 border border-line-strong bg-raised p-5 sm:p-7">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <p className="kicker">Sampai mana sekarang</p>
-                <p className="mt-2 font-serif text-[1.9rem] leading-tight text-ink">
-                  {decided ? (
-                    <>Telah diputus {active && <span className="text-muted">· {fmtDate(active.startedAt)}</span>}</>
-                  ) : (
-                    <>
-                      Tahap <span className="text-accent-ink">{STATUS_LABEL[item.currentStatus].toLowerCase()}</span>,{' '}
-                      <span className="whitespace-nowrap">{fmtDuration(runningDays)}</span>
-                    </>
-                  )}
-                </p>
-                <p className="mt-1 text-sm text-muted">{STATUS_HINT[item.currentStatus]}</p>
-              </div>
-              <dl className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
-                {totalDays !== null && (
-                  <>
-                    <dt className="text-muted">{decided ? 'Lama proses' : 'Sejak awal'}</dt>
-                    <dd className="text-right font-mono text-ink num">{fmtDuration(totalDays)}</dd>
-                  </>
-                )}
-                {active?.dueAt && !decided && (
-                  <>
-                    <dt className="text-muted">Tenggat tahap</dt>
-                    <dd className={cx('text-right font-mono num', overdue ? 'text-warn' : 'text-ink')}>{fmtShort(active.dueAt)}</dd>
-                  </>
-                )}
-                <dt className="text-muted">Diperbarui</dt>
-                <dd className="text-right font-mono text-ink">
-                  <RelTime date={item.lastActivityAt} />
-                </dd>
-              </dl>
-            </div>
-            <StatusRail status={item.currentStatus} stages={item.stages} size="lg" className="mt-8" />
-            {overdue && (
-              <p className="mt-6 border-l-2 border-warn pl-3 text-sm text-warn">
-                Tahap ini melewati tenggat {fmtDate(active!.dueAt)}. Redaksi belum menerima kabar perkembangan baru.
-              </p>
-            )}
-          </div>
+        <div className="mt-6 flex flex-wrap items-center gap-2">
+          <FollowButton item={item} />
+          <ShareButton title={item.title} />
+          <LinkButton to={`/kontribusi/baru?kasus=${item.slug}`} variant="ghost">
+            <Send className="size-4" /> Kirim kabar terbaru
+          </LinkButton>
         </div>
       </header>
 
-      <div className="container-page mt-12 grid gap-14 lg:grid-cols-[1fr_320px]">
-        <div className="min-w-0">
-          <section aria-labelledby="latar">
-            <h2 id="latar" className="kicker text-ink">
-              Latar perkara
-            </h2>
-            <div className="mt-3 max-w-3xl font-serif text-[1.13rem] leading-[1.75] text-ink-soft">
+      {/* Where the case stands right now */}
+      <section aria-labelledby="posisi" className="card p-5 sm:p-7">
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 id="posisi" className="kicker">
+            Sampai mana sekarang
+          </h2>
+          {overdue && <Badge tone="warn">Lewat tenggat</Badge>}
+        </div>
+        <p className="mt-2 text-heading-sm font-semibold text-ink sm:text-heading">
+          {decided ? (
+            <>
+              Telah diputus
+              {active && <span className="text-muted"> · {fmtDate(active.startedAt)}</span>}
+            </>
+          ) : (
+            <>
+              Tahap {STATUS_LABEL[item.currentStatus].toLowerCase()},{' '}
+              <span className="whitespace-nowrap text-muted">{fmtDuration(runningDays)}</span>
+            </>
+          )}
+        </p>
+        <p className="mt-1.5 text-sm text-muted">{STATUS_HINT[item.currentStatus]}</p>
+
+        <StatusRail status={item.currentStatus} stages={item.stages} size="lg" className="mt-8 sm:mt-10" />
+
+        <dl className="mt-8 grid grid-cols-2 gap-x-6 gap-y-6 border-t border-line pt-6 sm:grid-cols-3">
+          {totalDays !== null && (
+            <StatBlock
+              label={decided ? 'Lama proses' : 'Sejak awal'}
+              value={fmtDuration(totalDays)}
+              hint={item.filedAt ? `Mulai ${fmtShort(item.filedAt)}` : undefined}
+              className={statFit}
+            />
+          )}
+          {active?.dueAt && !decided && (
+            <StatBlock
+              label="Tenggat tahap"
+              value={<span className={cx(overdue && 'text-ember')}>{fmtShort(active.dueAt)}</span>}
+              hint={overdue ? 'Sudah terlewati' : undefined}
+              className={statFit}
+            />
+          )}
+          <StatBlock label="Diperbarui" value={<RelTime date={item.lastActivityAt} />} className={statFit} />
+        </dl>
+
+        {overdue && (
+          <div className="mt-6">
+            <Alert tone="warn">
+              Tahap ini melewati tenggat {fmtDate(active!.dueAt)}. Redaksi belum menerima kabar perkembangan baru.
+            </Alert>
+          </div>
+        )}
+      </section>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-8">
+        <div className="min-w-0 space-y-6">
+          <SectionCard id="latar" title="Latar perkara">
+            <div className="prose-editorial max-w-3xl px-5 py-5 sm:px-6 sm:py-6">
               {item.description.split(/\n{2,}/).map((p, i) => (
-                <p key={i} className={i ? 'mt-4' : ''}>
-                  {p}
-                </p>
+                <p key={i}>{p}</p>
               ))}
             </div>
-          </section>
+          </SectionCard>
 
-          <section aria-labelledby="linimasa" className="mt-14">
-            <div className="flex items-end justify-between border-t-2 border-ink pt-3">
-              <div>
-                <p className="kicker">Terbaru di atas</p>
-                <h2 id="linimasa" className="mt-1 font-serif text-[1.65rem] text-ink">
-                  Linimasa perkara
-                </h2>
-              </div>
-              <p className="font-mono text-xs text-muted">{item.stages.length} tahap</p>
-            </div>
-            <ol className="mt-8">
-              {stagesDesc.map((s, i) => (
-                <TimelineStage key={s.id} stage={s} slug={item.slug} isLatest={i === 0} />
+          <SectionCard
+            id="linimasa"
+            title="Linimasa perkara"
+            description="Terbaru di atas"
+            action={<Badge className="num">{item.stages.length} tahap</Badge>}
+          >
+            <ol className="px-5 py-6 sm:px-6">
+              {stagesDesc.map((s) => (
+                <TimelineStage key={s.id} stage={s} slug={item.slug} />
               ))}
             </ol>
-          </section>
+          </SectionCard>
 
-          <section aria-labelledby="riwayat" className="mt-16">
-            <div className="flex items-end justify-between border-t-2 border-ink pt-3">
-              <div>
-                <p className="kicker">Transparansi redaksi</p>
-                <h2 id="riwayat" className="mt-1 font-serif text-[1.65rem] text-ink">
-                  Riwayat perubahan
-                </h2>
-              </div>
-            </div>
-            <p className="mt-2 max-w-2xl text-sm text-muted">
-              Setiap perubahan status, tahapan, sumber, dan koreksi dicatat di sini beserta alasannya.
-            </p>
-            <div className="mt-4">
+          <SectionCard
+            id="riwayat"
+            title="Riwayat perubahan"
+            description="Setiap perubahan status, tahapan, sumber, dan koreksi dicatat di sini beserta alasannya."
+          >
+            <div className="px-5 py-5 sm:px-6">
               <RevisionList revisions={item.revisions} />
             </div>
-          </section>
+          </SectionCard>
         </div>
 
-        <aside className="space-y-10 lg:sticky lg:top-24 lg:self-start">
-          <section>
-            <h2 className="kicker text-ink">Pihak terkait</h2>
-            <ul className="mt-3 divide-y divide-line border-y border-line">
-              {item.defendants.map((d) => (
-                <li key={d.id ?? d.name} className="py-3">
-                  <p className="font-serif text-[1.1rem] text-ink">{d.name}</p>
-                  <p className="mt-0.5 text-[13px] text-muted">{d.role}</p>
-                  {d.description && <p className="mt-1 text-[13px] text-ink-soft">{d.description}</p>}
-                </li>
-              ))}
-            </ul>
-            <p className="mt-3 flex gap-2 text-[12.5px] leading-relaxed text-muted">
-              <Scale className="mt-0.5 size-3.5 shrink-0" />
+        <aside className="flex min-w-0 flex-col gap-6">
+          <SectionCard id="pihak" title="Pihak terkait">
+            {item.defendants.length > 0 ? (
+              <ul className="divide-y divide-line">
+                {item.defendants.map((d) => (
+                  <li key={d.id ?? d.name} className="px-5 py-3.5">
+                    <p className="text-[15px] font-medium text-ink">{d.name}</p>
+                    <p className="mt-0.5 text-[13px] text-muted">{d.role}</p>
+                    {d.description && <p className="mt-1.5 text-[13px] leading-relaxed text-ink-soft">{d.description}</p>}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="px-5 py-4 text-sm text-muted">Belum ada pihak yang dicatat.</p>
+            )}
+            <p className="flex gap-2 border-t border-line bg-alt px-5 py-4 text-[13px] leading-relaxed text-muted">
+              <Scale className="mt-0.5 size-3.5 shrink-0" aria-hidden />
               Semua pihak dianggap tidak bersalah sampai ada putusan berkekuatan hukum tetap.
             </p>
-          </section>
+          </SectionCard>
 
-          <section>
-            <h2 className="kicker text-ink">Fakta perkara</h2>
-            <dl className="mt-3 space-y-3 text-sm">
-              {(
-                [
-                  ['Nomor perkara', item.caseNumber, true],
-                  ['Lembaga penangan', item.institution],
-                  ['Pengadilan', item.court],
-                  ['Wilayah', item.region],
-                  ['Mulai', item.filedAt && fmtDate(item.filedAt)],
-                ] as const
-              )
-                .filter(([, v]) => v)
-                .map(([k, v, mono]) => (
-                  <div key={k}>
-                    <dt className="text-xs text-muted">{k}</dt>
-                    <dd className={cx('mt-0.5 text-ink', mono && 'break-all font-mono text-[13px]')}>{v}</dd>
-                  </div>
-                ))}
+          <SectionCard id="fakta" title="Fakta perkara">
+            <dl className="divide-y divide-line">
+              {facts.map(([k, v, mono]) => (
+                <div key={k} className="px-5 py-3">
+                  <dt className="text-[13px] text-muted">{k}</dt>
+                  <dd className={cx('mt-0.5 text-sm text-ink', mono && 'break-all font-mono text-[13px]')}>{v}</dd>
+                </div>
+              ))}
             </dl>
-          </section>
+          </SectionCard>
 
           {item.sources.length > 0 && (
-            <section>
-              <h2 className="kicker text-ink">Sumber umum</h2>
-              <ul className="mt-2 divide-y divide-line">
+            <SectionCard id="sumber" title="Sumber umum" action={<Badge className="num">{item.sources.length}</Badge>}>
+              <ul className="divide-y divide-line px-5 py-4">
                 {item.sources.map((s) => (
                   <SourceItem key={s.id} source={s} />
                 ))}
               </ul>
-            </section>
+            </SectionCard>
           )}
 
-          <section className="border border-line bg-raised p-5">
-            <p className="flex items-center gap-2 text-sm font-medium text-ink">
-              <BadgeCheck className="size-4 text-ok" /> {verified} sumber terverifikasi
-            </p>
-            <p className="mt-2 text-[13px] leading-relaxed text-muted">
+          <section aria-labelledby="koreksi" className="card p-5 lg:sticky lg:top-24">
+            <div className="flex items-center gap-2.5">
+              <span className="grid size-8 shrink-0 place-items-center rounded-full bg-ink/[0.06] text-ink">
+                <BadgeCheck className="size-4" aria-hidden />
+              </span>
+              <p className="text-sm font-medium text-ink">
+                <span className="num">{verified}</span> sumber terverifikasi
+              </p>
+            </div>
+            <h2 id="koreksi" className="mt-4 text-[15px] font-semibold tracking-[-0.01em] text-ink">
+              Koreksi & hak jawab
+            </h2>
+            <p className="mt-1 text-[13px] leading-relaxed text-muted">
               Menemukan kekeliruan, atau Anda pihak yang disebut? Gunakan hak jawab Anda.
             </p>
-            <Button variant="outline" size="sm" className="mt-4 w-full" onClick={() => setCorrectionOpen(true)}>
+            <Button variant="outline" className="mt-4 w-full" onClick={() => setCorrectionOpen(true)}>
               <MessageSquareWarning className="size-4" /> Ajukan koreksi
             </Button>
           </section>

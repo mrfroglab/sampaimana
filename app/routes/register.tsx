@@ -36,8 +36,8 @@ export default function Register() {
       title="Buat akun"
       aside={
         <>
-          Dengan akun, Anda bisa <em className="text-accent-ink">mengikuti</em> kasus dan{' '}
-          <em className="text-accent-ink">mengirim kabar</em> perkembangan untuk diverifikasi redaksi.
+          Dengan akun, Anda bisa mengikuti kasus dan mengirim kabar perkembangan{' '}
+          <span className="text-muted">untuk diverifikasi redaksi.</span>
         </>
       }
     >
@@ -63,9 +63,9 @@ export default function Register() {
           .
         </p>
       </form>
-      <p className="mt-6 border-t border-line pt-5 text-sm text-muted">
+      <p className="mt-6 border-t border-line pt-5 text-center text-sm text-muted">
         Sudah punya akun?{' '}
-        <Link to="/masuk" className="link text-ink">
+        <Link to="/masuk" className="link font-medium text-ink">
           Masuk
         </Link>
       </p>
