@@ -3,7 +3,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import { Alert, Button, Field, Input, Select, Textarea } from '~/components/ui';
 import { ApiError } from '~/lib/api';
 import { STATUS_HINT, STATUS_LABEL, STATUS_ORDER, cx, toInputDate } from '~/lib/format';
-import type { CaseStatus, Category, Defendant } from '~/lib/types';
+import type { CaseStatus, Category, Defendant, WithSippUrl } from '~/lib/types';
 import { FormCard, type AdminCase } from './shared';
 
 export interface CasePayload {
@@ -16,6 +16,8 @@ export interface CasePayload {
   institution: string;
   court: string;
   region: string;
+  /** null clears the link on update. */
+  sippUrl: string | null;
   filedAt: string;
   defendants: Defendant[];
   reason?: string;
@@ -23,7 +25,9 @@ export interface CasePayload {
 
 const SUMMARY_MAX = 280;
 
-const fromCase = (c?: AdminCase): CasePayload => ({
+type FormState = Omit<CasePayload, 'sippUrl'> & { sippUrl: string };
+
+const fromCase = (c?: AdminCase & WithSippUrl): FormState => ({
   caseNumber: c?.caseNumber ?? '',
   title: c?.title ?? '',
   summary: c?.summary ?? '',
@@ -33,6 +37,7 @@ const fromCase = (c?: AdminCase): CasePayload => ({
   institution: c?.institution ?? '',
   court: c?.court ?? '',
   region: c?.region ?? '',
+  sippUrl: c?.sippUrl ?? '',
   filedAt: toInputDate(c?.filedAt),
   defendants: c?.defendants.map(({ name, role, description }) => ({ name, role, description: description ?? '' })) ?? [],
   reason: '',
@@ -45,20 +50,20 @@ export function CaseForm({
   submitLabel,
   onSubmit,
 }: {
-  initial?: AdminCase;
+  initial?: AdminCase & WithSippUrl;
   categories: Category[];
   readOnly?: boolean;
   submitLabel: string;
   onSubmit: (payload: CasePayload) => Promise<void>;
 }) {
-  const [form, setForm] = useState<CasePayload>(() => fromCase(initial));
+  const [form, setForm] = useState<FormState>(() => fromCase(initial));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const isEdit = Boolean(initial);
   const statusChanged = isEdit && form.currentStatus !== initial!.currentStatus;
 
-  const set = <K extends keyof CasePayload>(key: K, value: CasePayload[K]) => setForm((f) => ({ ...f, [key]: value }));
+  const set = <K extends keyof FormState>(key: K, value: FormState[K]) => setForm((f) => ({ ...f, [key]: value }));
   const setDefendant = (i: number, patch: Partial<Defendant>) =>
     setForm((f) => ({ ...f, defendants: f.defendants.map((d, j) => (j === i ? { ...d, ...patch } : d)) }));
 
@@ -74,6 +79,8 @@ export function CaseForm({
     try {
       await onSubmit({
         ...form,
+        // Empty clears the link on update (API treats null as "clear"); on create it simply stores nothing.
+        sippUrl: form.sippUrl.trim() || null,
         defendants: form.defendants.filter((d) => d.name.trim() || d.role.trim()),
         reason: form.reason?.trim() || undefined,
       });
@@ -187,6 +194,23 @@ export function CaseForm({
           </Field>
           <Field label="Wilayah" optional htmlFor="cf-region">
             <Input id="cf-region" value={form.region} onChange={(e) => set('region', e.target.value)} />
+          </Field>
+          <Field
+            label="Tautan SIPP"
+            optional
+            htmlFor="cf-sipp"
+            error={errors.sippUrl}
+            hint="Halaman Detil Perkara di SIPP pengadilan, jika ada"
+          >
+            <Input
+              id="cf-sipp"
+              type="url"
+              inputMode="url"
+              placeholder="https://sipp.pn-…go.id/…"
+              value={form.sippUrl}
+              onChange={(e) => set('sippUrl', e.target.value)}
+              invalid={!!errors.sippUrl}
+            />
           </Field>
         </div>
       </FormCard>

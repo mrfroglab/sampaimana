@@ -1,25 +1,26 @@
 import { useState } from 'react';
 import { useRevalidator, useSearchParams } from 'react-router';
-import { Archive, ArchiveRestore, ExternalLink, Users } from 'lucide-react';
+import { Archive, ArchiveRestore, ClipboardPaste, ExternalLink, Users } from 'lucide-react';
 import type { Route } from './+types/case-edit';
 import { Alert, Badge, Button, Card, CardHeader, CategoryTag, PageSkeleton, buttonClass, useToast } from '~/components/ui';
 import { StatusRail } from '~/components/StatusRail';
 import { CaseForm } from '~/components/admin/CaseForm';
 import { StageEditor } from '~/components/admin/StageEditor';
+import { SippImportDialog } from '~/components/admin/SippImport';
 import { SourcesManager } from '~/components/admin/SourcesManager';
 import { AdminPageHeader, ConfirmDialog, Tabs, useCanEdit, type AdminCase } from '~/components/admin/shared';
 import { publicGet } from '~/lib/api';
 import { fmtDateTime } from '~/lib/format';
 import { seo } from '~/lib/seo';
 import { api, requireUser } from '~/lib/session';
-import type { Category } from '~/lib/types';
+import type { Category, WithSippUrl } from '~/lib/types';
 
 export const meta: Route.MetaFunction = ({ data }) => seo({ title: data ? `Sunting: ${data.data.title}` : 'Sunting kasus', noindex: true });
 
 export async function clientLoader({ request, params }: Route.ClientLoaderArgs) {
   await requireUser(request, ['SUPER_ADMIN', 'EDITOR', 'VIEWER']);
   const [detail, categories] = await Promise.all([
-    api.get<AdminCase>(`/api/admin/cases/${params.id}`),
+    api.get<AdminCase & WithSippUrl>(`/api/admin/cases/${params.id}`),
     publicGet<Category[]>('/api/categories'),
   ]);
   return { data: detail.data, categories: categories.data };
@@ -38,6 +39,7 @@ const ACTION_LABEL: Record<string, string> = {
   STAGE_ADDED: 'Tahapan',
   STAGE_UPDATED: 'Tahapan',
   STAGE_REMOVED: 'Tahapan',
+  SIPP_IMPORT: 'Impor SIPP',
   ARTICLE_PUBLISHED: 'Artikel',
   ARTICLE_UPDATED: 'Artikel',
   ARTICLE_REMOVED: 'Artikel',
@@ -56,6 +58,7 @@ export default function AdminCaseEdit({ loaderData }: Route.ComponentProps) {
   const revalidator = useRevalidator();
   const toast = useToast();
   const [archiving, setArchiving] = useState(false);
+  const [importing, setImporting] = useState(false);
   const refresh = () => revalidator.revalidate();
 
   return (
@@ -66,6 +69,16 @@ export default function AdminCaseEdit({ loaderData }: Route.ComponentProps) {
           <span className="flex flex-wrap items-center gap-x-3 gap-y-1 normal-case tracking-normal">
             <CategoryTag name={c.category.name} color={c.category.color} showColor />
             <span className="font-mono text-xs font-normal text-muted">{c.caseNumber}</span>
+            {c.sippUrl && (
+              <a
+                href={c.sippUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-xs font-medium text-ink-soft underline-offset-2 hover:text-ink hover:underline"
+              >
+                Lihat di SIPP <ExternalLink className="size-3" aria-hidden />
+              </a>
+            )}
             {!c.isActive && <Badge tone="outline">Diarsipkan</Badge>}
           </span>
         }
@@ -76,6 +89,11 @@ export default function AdminCaseEdit({ loaderData }: Route.ComponentProps) {
               <a href={`/kasus/${c.slug}`} target="_blank" rel="noopener" className={buttonClass('ghost', 'md')}>
                 Halaman publik <ExternalLink />
               </a>
+            )}
+            {editable && (
+              <Button variant="outline" onClick={() => setImporting(true)}>
+                <ClipboardPaste /> Impor dari SIPP
+              </Button>
             )}
             {editable &&
               (c.isActive ? (
@@ -184,6 +202,17 @@ export default function AdminCaseEdit({ loaderData }: Route.ComponentProps) {
           </Card>
         )}
       </div>
+
+      {editable && (
+        <SippImportDialog
+          open={importing}
+          onClose={() => setImporting(false)}
+          caseId={c.id}
+          caseTitle={c.title}
+          initialSippUrl={c.sippUrl}
+          onApplied={refresh}
+        />
+      )}
 
       <ConfirmDialog
         open={archiving}

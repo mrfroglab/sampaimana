@@ -110,6 +110,8 @@ export interface CaseListItem {
   court: string | null;
   region: string | null;
   filedAt: string | null;
+  /** Halaman "Detil Perkara" di SIPP pengadilan, bila ada. */
+  sippUrl?: string | null;
   lastActivityAt: string;
   createdAt: string;
   category: Category;
@@ -170,4 +172,60 @@ export interface Contribution {
   reviewedAt: string | null;
   createdAt: string;
   case: { id?: string; title: string; slug: string; caseNumber: string; currentStatus?: CaseStatus };
+}
+
+/** Mixed into admin case shapes: the API now returns `sippUrl` on every case. */
+export interface WithSippUrl {
+  sippUrl?: string | null;
+}
+
+/* ---------- SIPP import (paste-based) ---------- */
+
+export interface SippParty {
+  role: string;
+  name: string;
+}
+
+export interface SippHearing {
+  /** YYYY-MM-DD */
+  date: string;
+  time: string | null;
+  agenda: string | null;
+  room: string | null;
+}
+
+/** Result of reading a pasted SIPP "Detil Perkara" page. Every field may be null/empty. */
+export interface SippParsed {
+  caseNumber: string | null;
+  court: string | null;
+  classification: string | null;
+  registeredAt: string | null;
+  statusText: string | null;
+  parties: SippParty[];
+  schedule: SippHearing[];
+  verdictDate: string | null;
+  verdictSummary: string | null;
+  warnings: string[];
+}
+
+/** A proposed (not yet stored) stage. `key` is a stable hash used to pick proposals on apply. */
+export interface SippProposal {
+  key: string;
+  stageType: CaseStatus;
+  status: StageStatus;
+  title: string;
+  summary: string;
+  startedAt: string;
+  dueAt: string | null;
+}
+
+export interface SippPreview {
+  parsed: SippParsed;
+  proposals: SippProposal[];
+  warnings: string[];
+}
+
+export interface SippApplyResult {
+  created: Stage[];
+  case: { id: string; slug: string; currentStatus: CaseStatus };
 }
