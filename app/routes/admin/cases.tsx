@@ -1,9 +1,10 @@
 import { Form, Link, useSearchParams } from 'react-router';
-import { ChevronRight, FileText, Pencil, Plus, Search } from 'lucide-react';
+import { AlertTriangle, ChevronRight, FileText, Pencil, Plus, Search } from 'lucide-react';
 import type { Route } from './+types/cases';
-import { Badge, Button, CategoryTag, EmptyState, Input, LinkButton, PageSkeleton, Pagination, RelTime, Select } from '~/components/ui';
+import { Badge, Button, CategoryTag, EmptyState, Input, LinkButton, PageSkeleton, Pagination, RelTime, Select, buttonClass } from '~/components/ui';
 import {
   AdminPageHeader,
+  AttentionBadge,
   TableCard,
   Tabs,
   rowClass,
@@ -28,6 +29,7 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
     q: sp.get('q'),
     status: sp.get('status'),
     state: sp.get('state') || 'active',
+    attention: sp.get('attention'),
     page: sp.get('page') || 1,
     limit: 25,
   });
@@ -43,7 +45,8 @@ export default function AdminCases({ loaderData }: Route.ComponentProps) {
   const [params] = useSearchParams();
   const editable = useCanEdit();
   const state = (params.get('state') as ArchiveState) || 'active';
-  const filtered = Boolean(params.get('q') || params.get('status'));
+  const needsCheck = params.get('attention') === 'check';
+  const filtered = Boolean(params.get('q') || params.get('status') || needsCheck);
 
   const hrefWith = (patch: Record<string, string | number | null>) => {
     const next = new URLSearchParams(params);
@@ -85,19 +88,29 @@ export default function AdminCases({ loaderData }: Route.ComponentProps) {
       />
 
       <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-        <Tabs<ArchiveState>
-          label="Status arsip"
-          value={state}
-          hrefFor={(v) => hrefWith({ state: v === 'active' ? null : v })}
-          options={[
-            { value: 'active', label: 'Aktif' },
-            { value: 'inactive', label: 'Diarsipkan' },
-            { value: 'all', label: 'Semua' },
-          ]}
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <Tabs<ArchiveState>
+            label="Status arsip"
+            value={state}
+            hrefFor={(v) => hrefWith({ state: v === 'active' ? null : v })}
+            options={[
+              { value: 'active', label: 'Aktif' },
+              { value: 'inactive', label: 'Diarsipkan' },
+              { value: 'all', label: 'Semua' },
+            ]}
+          />
+          <Link
+            to={hrefWith({ attention: needsCheck ? null : 'check' })}
+            aria-pressed={needsCheck}
+            className={buttonClass(needsCheck ? 'primary' : 'outline', 'sm')}
+          >
+            <AlertTriangle /> Perlu dicek
+          </Link>
+        </div>
 
         <Form method="get" className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center" role="search">
           {state !== 'active' && <input type="hidden" name="state" value={state} />}
+          {needsCheck && <input type="hidden" name="attention" value="check" />}
           <div className="relative min-w-0 flex-1 xl:w-72 xl:flex-none">
             <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden />
             <Input name="q" defaultValue={params.get('q') ?? ''} placeholder="Judul atau nomor perkara" aria-label="Cari kasus" className="pl-10" />
@@ -119,8 +132,12 @@ export default function AdminCases({ loaderData }: Route.ComponentProps) {
       </div>
 
       {items.length === 0 ? (
-        <EmptyState title="Tidak ada kasus" icon={<FileText />}>
-          {filtered ? 'Coba ubah kata kunci atau filter.' : 'Belum ada kasus pada daftar ini.'}
+        <EmptyState title={needsCheck ? 'Tidak ada kasus yang perlu dicek' : 'Tidak ada kasus'} icon={<FileText />}>
+          {needsCheck
+            ? 'Semua tahapan aktif masih dalam tenggat dan setiap kasus punya pembaruan terbaru.'
+            : filtered
+              ? 'Coba ubah kata kunci atau filter.'
+              : 'Belum ada kasus pada daftar ini.'}
         </EmptyState>
       ) : (
         <>
@@ -151,6 +168,7 @@ export default function AdminCases({ loaderData }: Route.ComponentProps) {
                         <CategoryTag name={c.category.name} color={c.category.color} showColor />
                         <span className="font-mono text-xs text-muted">{c.caseNumber}</span>
                         {!c.isActive && <Badge tone="outline">Diarsipkan</Badge>}
+                        <AttentionBadge reason={c.attention} days={c.attentionDays} />
                       </div>
                     </td>
                     <td className={tdClass}>
@@ -187,6 +205,7 @@ export default function AdminCases({ loaderData }: Route.ComponentProps) {
                     <div className="mt-2 flex flex-wrap items-center gap-1.5">
                       <Badge>{STATUS_LABEL[c.currentStatus]}</Badge>
                       {!c.isActive && <Badge tone="outline">Diarsipkan</Badge>}
+                      <AttentionBadge reason={c.attention} days={c.attentionDays} />
                       {queue(c)}
                     </div>
                     <p className="mt-2 text-xs text-muted">

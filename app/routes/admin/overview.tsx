@@ -1,9 +1,9 @@
 import { Link } from 'react-router';
-import { AlertTriangle, ArrowRight, CheckCircle2, ChevronRight, FileText, Inbox, MessageSquareWarning, Plus, Users } from 'lucide-react';
+import { ArrowRight, CheckCircle2, ChevronRight, FileText, Inbox, MessageSquareWarning, Plus, Users } from 'lucide-react';
 import type { Route } from './+types/overview';
-import { Badge, Card, CardHeader, LinkButton, PageSkeleton } from '~/components/ui';
-import { AdminPageHeader, StatTile, hoursLabel, useCanEdit, type Overview } from '~/components/admin/shared';
-import { STATUS_LABEL, daysBetween, fmtDate, fmtNum } from '~/lib/format';
+import { Card, CardHeader, LinkButton, PageSkeleton, buttonClass } from '~/components/ui';
+import { AdminPageHeader, AttentionBadge, StatTile, hoursLabel, useCanEdit, type Attention, type AttentionItem, type Overview } from '~/components/admin/shared';
+import { STATUS_LABEL, fmtDate, fmtNum } from '~/lib/format';
 import { seo } from '~/lib/seo';
 import { api, requireUser } from '~/lib/session';
 
@@ -11,8 +11,11 @@ export const meta: Route.MetaFunction = () => seo({ title: 'Ringkasan redaksi', 
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const user = await requireUser(request, ['SUPER_ADMIN', 'EDITOR', 'VIEWER']);
-  const res = await api.get<Overview>('/api/admin/overview');
-  return { user, overview: res.data };
+  const [res, attention] = await Promise.all([
+    api.get<Overview>('/api/admin/overview'),
+    api.get<Attention>('/api/admin/attention'),
+  ]);
+  return { user, overview: res.data, attention: attention.data };
 }
 
 export function HydrateFallback() {
@@ -24,7 +27,8 @@ const SLA_HOURS = 48;
 const CORRECTION_SLA_HOURS = 72;
 
 export default function AdminOverview({ loaderData }: Route.ComponentProps) {
-  const { user, overview: o } = loaderData;
+  const { user, overview: o, attention } = loaderData;
+  const needsCheck = attention.overdue.length + attention.stale.length;
   const editable = useCanEdit();
   const pendingLate = (o.oldestPendingHours ?? 0) > SLA_HOURS;
   const correctionLate = (o.oldestCorrectionHours ?? 0) > CORRECTION_SLA_HOURS;
@@ -87,52 +91,30 @@ export default function AdminOverview({ loaderData }: Route.ComponentProps) {
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="overflow-hidden lg:col-span-2">
           <CardHeader
-            title="Tahapan melewati tenggat"
-            description="Perlu dicek: tahapan aktif yang sudah lewat tanggal tenggatnya."
+            title="Perlu dicek"
+            description="Tahapan aktif yang lewat tenggat, yang segera jatuh tempo, dan kasus yang lama tanpa pembaruan."
             action={
-              <Badge tone={o.overdueStages.length ? 'warn' : 'neutral'}>
-                <span className="num">{o.overdueStages.length}</span> tahapan
-              </Badge>
+              <Link to="/redaksi/kasus?attention=check" className={buttonClass(needsCheck ? 'primary' : 'outline', 'sm')}>
+                <span className="num">{needsCheck}</span> perlu dicek
+              </Link>
             }
           />
-          {o.overdueStages.length === 0 ? (
+          {attention.overdue.length + attention.dueSoon.length + attention.stale.length === 0 ? (
             <div className="flex items-start gap-3 p-5">
               <span className="grid size-8 shrink-0 place-items-center rounded-full bg-ink/[0.06] text-muted">
                 <CheckCircle2 className="size-4" aria-hidden />
               </span>
               <p className="max-w-xl text-sm text-muted">
-                Tidak ada tahapan aktif yang melewati tenggat. Isi kolom <em>tenggat</em> pada tahapan (misalnya batas masa penahanan
-                atau jadwal sidang) agar keterlambatan proses terpantau di sini.
+                Tidak ada yang perlu dicek. Isi kolom <em>tenggat</em> pada tahapan (misalnya batas masa penahanan atau jadwal sidang)
+                agar keterlambatan proses terpantau di sini. Ringkasan harian dikirim ke redaksi setiap pagi bila ada yang perlu dicek.
               </p>
             </div>
           ) : (
-            <ul className="divide-y divide-line">
-              {o.overdueStages.map((s) => (
-                <li key={s.id}>
-                  <Link
-                    to={`/redaksi/kasus/${s.case.id}`}
-                    className="group flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-ink/[0.03]"
-                  >
-                    <span className="hidden size-8 shrink-0 place-items-center rounded-full bg-ember-wash text-ember sm:grid">
-                      <AlertTriangle className="size-4" aria-hidden />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-medium text-ink">{s.case.title}</span>
-                      <span className="mt-0.5 block text-[13px] text-muted">
-                        Tahap {STATUS_LABEL[s.stageType].toLowerCase()} · tenggat {fmtDate(s.dueAt)}
-                      </span>
-                      <span className="mt-1 block text-[13px] font-medium text-ember num sm:hidden">
-                        lewat {daysBetween(s.dueAt)} hari
-                      </span>
-                    </span>
-                    <span className="hidden shrink-0 text-[13px] font-medium text-ember num sm:block">
-                      lewat {daysBetween(s.dueAt)} hari
-                    </span>
-                    <ChevronRight className="size-4 shrink-0 text-faint transition-colors group-hover:text-ink" aria-hidden />
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <div className="divide-y divide-line">
+              <AttentionGroup title="Lewat tenggat" items={attention.overdue} reason="OVERDUE" />
+              <AttentionGroup title="Jatuh tempo dalam 7 hari" items={attention.dueSoon} reason="DUE_SOON" />
+              <AttentionGroup title="Tanpa pembaruan lama" items={attention.stale} reason="STALE" />
+            </div>
           )}
         </Card>
 
@@ -163,5 +145,41 @@ export default function AdminOverview({ loaderData }: Route.ComponentProps) {
         </Card>
       </div>
     </div>
+  );
+}
+
+const GROUP_LIMIT = 5;
+
+function AttentionGroup({ title, items, reason }: { title: string; items: AttentionItem[]; reason: 'OVERDUE' | 'DUE_SOON' | 'STALE' }) {
+  if (items.length === 0) return null;
+  return (
+    <section>
+      <div className="flex items-center justify-between gap-3 bg-alt px-5 py-2">
+        <h3 className="kicker">{title}</h3>
+        <span className="text-xs text-muted num">{items.length}</span>
+      </div>
+      <ul className="divide-y divide-line">
+        {items.slice(0, GROUP_LIMIT).map((i) => (
+          <li key={`${i.case.id}-${i.stage?.id ?? 'x'}`}>
+            <Link to={`/redaksi/kasus/${i.case.id}`} className="group flex items-center gap-3 px-5 py-3 transition-colors hover:bg-ink/[0.03]">
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-medium text-ink">{i.case.title}</span>
+                <span className="mt-0.5 block truncate text-[13px] text-muted">
+                  {i.stage ? `Tahap ${STATUS_LABEL[i.stage.stageType].toLowerCase()}` : STATUS_LABEL[i.case.currentStatus]}
+                  {i.stage?.dueAt && reason !== 'STALE' ? ` · tenggat ${fmtDate(i.stage.dueAt)}` : ''}
+                </span>
+              </span>
+              <AttentionBadge reason={reason} days={i.days} />
+              <ChevronRight className="size-4 shrink-0 text-faint transition-colors group-hover:text-ink" aria-hidden />
+            </Link>
+          </li>
+        ))}
+      </ul>
+      {items.length > GROUP_LIMIT && (
+        <Link to="/redaksi/kasus?attention=check" className="block px-5 py-2.5 text-[13px] text-muted hover:text-ink">
+          Lihat {items.length - GROUP_LIMIT} lainnya <ArrowRight className="ml-0.5 inline size-3.5" />
+        </Link>
+      )}
+    </section>
   );
 }
