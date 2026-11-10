@@ -55,6 +55,7 @@ export interface AdminCase {
   institution: string | null;
   court: string | null;
   region: string | null;
+  sippUrl?: string | null;
   filedAt: string | null;
   isActive: boolean;
   lastActivityAt: string;

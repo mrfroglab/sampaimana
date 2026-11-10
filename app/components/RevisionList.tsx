@@ -9,6 +9,7 @@ export const ACTION_LABEL: Record<string, string> = {
   STAGE_ADDED: 'Tahapan',
   STAGE_UPDATED: 'Tahapan',
   STAGE_REMOVED: 'Tahapan',
+  SIPP_IMPORT: 'Impor SIPP',
   ARTICLE_PUBLISHED: 'Penjelasan',
   ARTICLE_UPDATED: 'Penjelasan',
   ARTICLE_REMOVED: 'Penjelasan',
