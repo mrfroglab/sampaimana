@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { ArrowRight } from 'lucide-react';
-import { Breadcrumbs, Button, CardHeader, Dialog, Field, StatBlock, Textarea } from '~/components/ui';
+import { Badge, Breadcrumbs, Button, CardHeader, Dialog, Field, StatBlock, Textarea } from '~/components/ui';
 import { canEdit, cx } from '~/lib/format';
 import { useSession } from '~/lib/session';
 import type { Article, Category, CaseStatus, Defendant, Revision, Source, Stage } from '~/lib/types';
@@ -36,6 +36,32 @@ export interface AdminCaseRow {
   _count: { stages: number; sources: number; follows: number };
   pendingContributions: number;
   openCorrections: number;
+  /** Set by the API: why this case needs an editor's attention (null = nothing). */
+  attention: AttentionReason | null;
+  attentionDays: number | null;
+}
+
+export type AttentionReason = 'OVERDUE' | 'STALE' | 'DUE_SOON';
+
+export interface AttentionItem {
+  case: { id: string; slug: string; title: string; caseNumber: string; currentStatus: CaseStatus };
+  stage: { id: string; stageType: CaseStatus; startedAt: string; dueAt: string | null } | null;
+  days: number;
+}
+
+export interface Attention {
+  overdue: AttentionItem[];
+  dueSoon: AttentionItem[];
+  stale: AttentionItem[];
+}
+
+/** "Perlu dicek" badge for a case row. Due-soon is informational, so it is not an alarm colour. */
+export function AttentionBadge({ reason, days }: { reason: AttentionReason | null; days: number | null }) {
+  if (!reason) return null;
+  const n = days ?? 0;
+  if (reason === 'OVERDUE') return <Badge tone="warn">Lewat tenggat {n} hari</Badge>;
+  if (reason === 'STALE') return <Badge tone="warn">Tanpa pembaruan {n} hari</Badge>;
+  return <Badge tone="outline">Jatuh tempo {n === 0 ? 'hari ini' : `${n} hari lagi`}</Badge>;
 }
 
 export interface AdminStage extends Omit<Stage, 'article'> {
