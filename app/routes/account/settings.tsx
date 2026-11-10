@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import type { Route } from './+types/settings';
-import { ApiError, api, replaceSession, requireUser, updateUser } from '~/lib/session';
+import { ApiError, api, replaceSession, requireUser, updateUser, useSession } from '~/lib/session';
 import type { User } from '~/lib/types';
 import { Alert, Button, CardHeader, Checkbox, Field, Input, PageSkeleton, useToast } from '~/components/ui';
+import { AccountSecurity } from '~/components/AccountSecurity';
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   return { user: await requireUser(request) };
@@ -15,6 +16,9 @@ export function HydrateFallback() {
 export default function Settings({ loaderData }: Route.ComponentProps) {
   const toast = useToast();
   const [user, setUser] = useState(loaderData.user);
+  const session = useSession();
+  const live = session.user ?? user;
+  const staff = ['SUPER_ADMIN', 'EDITOR', 'VIEWER'].includes(live.role);
   const [busy, setBusy] = useState(false);
   const [pwBusy, setPwBusy] = useState(false);
   const [pwErrors, setPwErrors] = useState<Record<string, string>>({});
@@ -98,8 +102,8 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
             <Input id="currentPassword" name="currentPassword" type="password" autoComplete="current-password" required invalid={!!pwErrors.currentPassword} />
           </Field>
           <div className="grid gap-5 sm:grid-cols-2">
-            <Field label="Kata sandi baru" htmlFor="newPassword" error={pwErrors.newPassword} hint="Minimal 8 karakter.">
-              <Input id="newPassword" name="newPassword" type="password" autoComplete="new-password" required minLength={8} invalid={!!pwErrors.newPassword} />
+            <Field label="Kata sandi baru" htmlFor="newPassword" error={pwErrors.newPassword} hint={staff ? 'Minimal 12 karakter untuk akun redaksi.' : 'Minimal 8 karakter.'}>
+              <Input id="newPassword" name="newPassword" type="password" autoComplete="new-password" required minLength={staff ? 12 : 8} invalid={!!pwErrors.newPassword} />
             </Field>
             <Field label="Ulangi kata sandi baru" htmlFor="confirm" error={pwErrors.confirm}>
               <Input id="confirm" name="confirm" type="password" autoComplete="new-password" required invalid={!!pwErrors.confirm} />
@@ -112,6 +116,8 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
           </Button>
         </div>
       </form>
+
+      <AccountSecurity user={live} />
     </div>
   );
 }

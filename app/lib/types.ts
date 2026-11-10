@@ -28,6 +28,7 @@ export interface User {
   role: Role;
   emailNotifications: boolean;
   createdAt: string;
+  twoFactorEnabled?: boolean;
 }
 
 export interface Category {

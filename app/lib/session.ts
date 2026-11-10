@@ -128,11 +128,29 @@ export async function downloadProtected(path: string, fileName: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export async function login(email: string, password: string) {
+export type LoginResult = { user: User; mfaTicket?: undefined } | { user?: undefined; mfaTicket: string };
+
+/** Step one. Returns the user, or an mfaTicket when the account has two-factor sign-in on. */
+export async function login(email: string, password: string): Promise<LoginResult> {
   const res = await fetch('/api/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password }),
+    credentials: 'same-origin',
+  });
+  const body = await parseEnvelope<{ user: User; accessToken: string } | { mfaRequired: true; mfaTicket: string }>(res);
+  if ('mfaRequired' in body.data) return { mfaTicket: body.data.mfaTicket };
+  initialised = Promise.resolve(true);
+  applySession(body.data);
+  return { user: body.data.user };
+}
+
+/** Step two: a 6-digit code from the authenticator app, or a recovery code. */
+export async function loginSecondFactor(mfaTicket: string, code: string) {
+  const res = await fetch('/api/auth/login/2fa', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ mfaTicket, code }),
     credentials: 'same-origin',
   });
   const body = await parseEnvelope<{ user: User; accessToken: string }>(res);
@@ -141,11 +159,11 @@ export async function login(email: string, password: string) {
   return body.data.user;
 }
 
-export async function register(name: string, email: string, password: string) {
+export async function register(name: string, email: string, password: string, turnstileToken?: string) {
   const res = await fetch('/api/auth/register', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, email, password }),
+    body: JSON.stringify({ name, email, password, turnstileToken }),
     credentials: 'same-origin',
   });
   const body = await parseEnvelope<{ user: User; accessToken: string }>(res);
