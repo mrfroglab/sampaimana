@@ -13,7 +13,7 @@ export const streamTimeout = 5_000;
  * Security headers for every rendered document.
  * - Pages are frame-protected (clickjacking) except the public widget at /embed/*,
  *   which is meant to be framed from any site.
- * - script-src is an allow-list ('self' + inline), not nonce-based: the app relies on inline scripts (theme, hydration).
+ * - script-src is an allow-list ('self' + inline + Cloudflare's analytics beacon, which the edge injects into every HTML response), not nonce-based: the app relies on inline scripts (theme, hydration).
  */
 function applySecurityHeaders(request: Request, headers: Headers) {
   const { pathname } = new URL(request.url);
@@ -22,7 +22,7 @@ function applySecurityHeaders(request: Request, headers: Headers) {
   // injects its own inline/eval helpers. 'unsafe-inline' stays because hydration and the theme
   // script are inline; the allow-list still blocks scripts loaded from other origins.
   const hardening = import.meta.env.PROD
-    ? "; object-src 'none'; base-uri 'self'; script-src 'self' 'unsafe-inline'"
+    ? "; object-src 'none'; base-uri 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com"
     : "";
   if (embed) {
     headers.set("Content-Security-Policy", `frame-ancestors *${hardening}`);
