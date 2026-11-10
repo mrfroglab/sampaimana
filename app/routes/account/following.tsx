@@ -63,7 +63,7 @@ export default function Following({ loaderData }: Route.ComponentProps) {
                 </div>
                 <Link
                   to={`/kasus/${c.slug}`}
-                  className="mt-1.5 block text-[15px] font-semibold leading-snug tracking-[-0.01em] text-ink hover:underline hover:decoration-line-strong hover:underline-offset-[3px]"
+                  className="mt-1.5 block text-[15px] font-semibold leading-snug text-ink hover:underline hover:decoration-line-strong hover:underline-offset-[3px]"
                 >
                   {c.title}
                 </Link>

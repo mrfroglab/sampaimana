@@ -86,7 +86,7 @@ function CasePicker({ value, onChange, error }: { value: Picked | null; onChange
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="truncate font-mono text-xs text-muted">{value.caseNumber}</p>
-            <p className="mt-1 text-[15px] font-semibold leading-snug tracking-[-0.01em] text-ink">{value.title}</p>
+            <p className="mt-1 text-[15px] font-semibold leading-snug text-ink">{value.title}</p>
           </div>
           <button type="button" onClick={() => onChange(null)} className={buttonClass('ghost', 'icon-sm', '-mr-1 -mt-1 text-muted')} aria-label="Ganti kasus">
             <X />
@@ -367,7 +367,7 @@ export default function Contribute({ loaderData }: Route.ComponentProps) {
         <aside className="min-w-0">
           <div className="space-y-4 lg:sticky lg:top-24">
             <Card className="p-5">
-              <p className="text-[15px] font-semibold tracking-[-0.01em] text-ink">Yang membuat kiriman cepat diterima</p>
+              <p className="text-[15px] font-semibold text-ink">Yang membuat kiriman cepat diterima</p>
               <ul className="mt-3 space-y-2.5 text-[13px] text-ink-soft">
                 {[
                   'Tanggal kejadian yang jelas.',

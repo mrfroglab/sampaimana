@@ -34,7 +34,7 @@ export default function AccountLayout({ loaderData }: Route.ComponentProps) {
         title={
           <span className="flex min-w-0 items-center gap-3 sm:gap-4">
             <span
-              className="grid size-10 shrink-0 place-items-center rounded-full bg-ink text-base font-semibold tracking-normal text-on-ink sm:size-12 sm:text-lg"
+              className="grid size-10 shrink-0 place-items-center rounded-full bg-iron text-base font-semibold text-[#fafafa] sm:size-12 sm:text-lg"
               aria-hidden
             >
               {initial}
@@ -54,7 +54,7 @@ export default function AccountLayout({ loaderData }: Route.ComponentProps) {
                   end={t.end}
                   className={({ isActive }) =>
                     cx(
-                      'flex h-9 items-center gap-2 whitespace-nowrap rounded-full px-3.5 text-sm transition-colors [&_svg]:size-4 [&_svg]:shrink-0',
+                      'flex h-9 items-center gap-2 whitespace-nowrap rounded-xl px-3.5 text-sm transition-colors [&_svg]:size-4 [&_svg]:shrink-0',
                       isActive ? 'bg-ink/[0.06] font-medium text-ink' : 'text-muted hover:bg-ink/[0.04] hover:text-ink',
                     )
                   }

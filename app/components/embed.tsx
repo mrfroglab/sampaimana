@@ -82,7 +82,7 @@ export function EmbedError({ status = 404 }: { status?: number }) {
     <EmbedFrame slug={slug}>
       <div className="card flex flex-col gap-1.5 p-5">
         <span className="font-mono text-[11px] text-muted">Galat {status}</span>
-        <p className="text-[15px] font-semibold tracking-[-0.01em] text-ink">
+        <p className="text-[15px] font-semibold text-ink">
           {notFound ? 'Kasus tidak ditemukan' : 'Status kasus belum bisa dimuat'}
         </p>
         <p className="text-[13px] text-muted">

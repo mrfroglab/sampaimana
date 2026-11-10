@@ -315,7 +315,7 @@ function SippImportBody({
       ) : (
         <section aria-label="Usulan tahapan" className="space-y-3">
           <div className="flex items-center justify-between gap-3">
-            <h3 className="text-[15px] font-semibold tracking-[-0.01em]">
+            <h3 className="text-[15px] font-semibold">
               Usulan tahapan <span className="font-normal text-muted num">({proposals.length})</span>
             </h3>
             <Button

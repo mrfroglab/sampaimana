@@ -99,7 +99,7 @@ export default function StagePage({ loaderData }: Route.ComponentProps) {
       {stage.sources.length > 0 && (
         <section aria-labelledby="sumber" className="card mt-6 overflow-hidden">
           <div className="flex items-center justify-between gap-4 border-b border-line px-5 py-4 sm:px-6">
-            <h2 id="sumber" className="text-[15px] font-semibold tracking-[-0.01em] text-ink">
+            <h2 id="sumber" className="text-[15px] font-semibold text-ink">
               Sumber
             </h2>
             <Badge className="num">{stage.sources.length}</Badge>

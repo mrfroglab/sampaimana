@@ -56,7 +56,7 @@ function Segmented({ value, onChange }: { value: Measure; onChange: (v: Measure)
     { value: 'avg', label: 'Rata-rata' },
   ];
   return (
-    <div role="group" aria-label="Ukuran yang ditampilkan" className="inline-flex gap-1 rounded-full bg-ink/[0.045] p-1">
+    <div role="group" aria-label="Ukuran yang ditampilkan" className="inline-flex gap-1 rounded-xl bg-ink/[0.05] p-1">
       {opts.map((o) => (
         <button
           key={o.value}
@@ -64,7 +64,7 @@ function Segmented({ value, onChange }: { value: Measure; onChange: (v: Measure)
           aria-pressed={value === o.value}
           onClick={() => onChange(o.value)}
           className={cx(
-            'h-8 rounded-full px-3.5 text-[13px] font-medium transition-[background-color,color,box-shadow]',
+            'h-8 rounded-lg px-3.5 text-[13px] font-medium transition-[background-color,color,box-shadow]',
             value === o.value ? 'bg-raised text-ink shadow-card' : 'text-muted hover:text-ink',
           )}
         >
@@ -110,7 +110,7 @@ function BarList({
             </Link>
             {g.lowSample && <Badge tone="outline">sampel kecil</Badge>}
           </div>
-          <p className="shrink-0 text-right text-[15px] font-semibold tracking-[-0.02em] text-ink num">{days(value(g))}</p>
+          <p className="shrink-0 text-right text-[15px] font-semibold text-ink num">{days(value(g))}</p>
         </div>
         <div
           className="mt-2.5 h-2.5 overflow-hidden rounded-full bg-ink/[0.06] sm:ml-[34px]"
@@ -149,7 +149,7 @@ function BarList({
               <li key={g.slug}>
                 <Link
                   to={hrefFor(g)}
-                  className="inline-flex h-7 items-center gap-1.5 rounded-full bg-ink/[0.045] px-3 text-xs text-ink-soft transition-colors hover:bg-ink/[0.08]"
+                  className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-line bg-raised px-2.5 text-xs text-ink-soft transition-colors hover:border-line-strong"
                 >
                   {g.label} <span className="text-muted num">{g.cases}</span>
                 </Link>

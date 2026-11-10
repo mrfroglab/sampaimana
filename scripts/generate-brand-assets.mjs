@@ -35,10 +35,10 @@ function raster(svg, size) {
 }
 
 const files = {
-  'favicon.png': raster(tileSvg({ rx: 9 }), 64),
+  'favicon.png': raster(tileSvg({ rx: 10 }), 64),
   'apple-touch-icon.png': raster(tileSvg({ rx: 0, scale: 1.25 }), 180), // iOS rounds it itself; no transparency
-  'icon-192.png': raster(tileSvg({ rx: 9 }), 192),
-  'icon-512.png': raster(tileSvg({ rx: 9 }), 512),
+  'icon-192.png': raster(tileSvg({ rx: 10 }), 192),
+  'icon-512.png': raster(tileSvg({ rx: 10 }), 512),
   // glyph ends up well inside the 80% (circular) safe zone
   'icon-maskable-512.png': raster(tileSvg({ rx: 0, scale: 1.2 }), 512),
 };
@@ -58,7 +58,7 @@ const card = cardShell([
   h('div', { display: 'flex', flexDirection: 'column', flexGrow: 1, justifyContent: 'center', paddingTop: 16, paddingBottom: 16 }, [
     h(
       'div',
-      { display: 'flex', fontSize: 92, fontWeight: 600, letterSpacing: '-0.045em', lineHeight: 1.02, color: C.ink },
+      { display: 'flex', fontSize: 92, fontWeight: 600, letterSpacing: '-0.02em', lineHeight: 1.02, color: C.ink },
       'Sampai mana kasusnya?',
     ),
     h(
