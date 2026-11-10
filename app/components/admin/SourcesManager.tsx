@@ -1,11 +1,11 @@
 import { useState, type FormEvent } from 'react';
-import { BadgeCheck, ExternalLink, Plus, Trash2 } from 'lucide-react';
-import { Alert, Badge, Button, Checkbox, Dialog, EmptyState, Field, Input, Select, useToast } from '~/components/ui';
+import { BadgeCheck, ExternalLink, Link2, Plus, Trash2 } from 'lucide-react';
+import { Alert, Badge, Button, CardHeader, Checkbox, Dialog, EmptyState, Field, Input, Select, useToast } from '~/components/ui';
 import { ApiError } from '~/lib/api';
 import { SOURCE_TYPE_LABEL, STATUS_LABEL, fmtDate, fmtShort, hostOf } from '~/lib/format';
 import { api } from '~/lib/session';
 import type { Source, SourceType } from '~/lib/types';
-import { ConfirmDialog, type AdminStage } from './shared';
+import { ConfirmDialog, dialogFooterClass, type AdminStage } from './shared';
 
 const TYPES = Object.keys(SOURCE_TYPE_LABEL) as SourceType[];
 
@@ -104,7 +104,7 @@ function AddSourceDialog({
           label="Saya sudah memeriksa sumber ini"
           hint="Sumber terverifikasi ditandai di halaman publik beserta nama pemeriksanya di log internal."
         />
-        <div className="flex justify-end gap-2 border-t border-line pt-4">
+        <div className={dialogFooterClass}>
           <Button variant="ghost" onClick={onClose}>
             Batal
           </Button>
@@ -154,51 +154,71 @@ export function SourcesManager({
   };
 
   return (
-    <div>
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-muted">
-          <span className="num">{sources.length}</span> sumber · <span className="num">{verified}</span> terverifikasi
-        </p>
-        {editable && (
-          <Button size="sm" onClick={() => setAdding(true)}>
-            <Plus className="size-4" /> Sumber
-          </Button>
-        )}
-      </div>
+    <div className="card overflow-hidden">
+      <CardHeader
+        title="Sumber"
+        description={
+          <>
+            <span className="num">{sources.length}</span> sumber · <span className="num">{verified}</span> terverifikasi
+          </>
+        }
+        action={
+          editable && (
+            <Button size="sm" className="shrink-0" onClick={() => setAdding(true)}>
+              <Plus /> Sumber
+            </Button>
+          )
+        }
+      />
 
       {sources.length === 0 ? (
-        <div className="mt-5">
-          <EmptyState title="Belum ada sumber">Kasus tanpa sumber sulit dipercaya pembaca. Tambahkan minimal satu sumber primer.</EmptyState>
+        <div className="p-5">
+          <EmptyState title="Belum ada sumber" icon={<Link2 />}>
+            Kasus tanpa sumber sulit dipercaya pembaca. Tambahkan minimal satu sumber primer.
+          </EmptyState>
         </div>
       ) : (
-        <ul className="mt-4 divide-y divide-line border-y border-line">
+        <ul className="divide-y divide-line">
           {sources.map((s) => (
-            <li key={s.id} className="flex flex-col gap-3 py-3 sm:flex-row sm:items-start sm:justify-between">
+            <li key={s.id} className="flex flex-col gap-3 px-5 py-4 transition-colors hover:bg-ink/[0.02] sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
-                <a href={s.url} target="_blank" rel="noopener noreferrer nofollow" className="group inline-flex items-start gap-1.5 font-medium text-ink">
-                  <span className="group-hover:underline">{s.title}</span>
-                  <ExternalLink className="mt-1 size-3 shrink-0 text-faint" />
+                <a
+                  href={s.url}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  className="group inline-flex max-w-full items-start gap-1.5 text-sm font-medium text-ink"
+                >
+                  <span className="min-w-0 break-words group-hover:underline">{s.title}</span>
+                  <ExternalLink className="mt-0.5 size-3.5 shrink-0 text-muted group-hover:text-ink" aria-hidden />
                 </a>
-                <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] text-muted">
-                  <span>{s.publisher || hostOf(s.url)}</span>
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-[13px] text-muted">
+                  <span className="min-w-0 truncate">{s.publisher || hostOf(s.url)}</span>
                   <Badge>{SOURCE_TYPE_LABEL[s.type]}</Badge>
                   <span>{stageLabel(s.stageId)}</span>
-                  {s.publishedAt && <span className="font-mono num">{fmtDate(s.publishedAt)}</span>}
-                </p>
+                  {s.publishedAt && <span className="font-mono text-xs num">{fmtDate(s.publishedAt)}</span>}
+                </div>
                 {s.isVerified && (
-                  <p className="mt-1 inline-flex items-center gap-1 text-[12.5px] text-ok">
-                    <BadgeCheck className="size-3.5" /> Diverifikasi{s.verifiedBy ? ` oleh ${s.verifiedBy.name}` : ''}
-                    {s.verifiedAt ? ` · ${fmtShort(s.verifiedAt)}` : ''}
+                  <p className="mt-2">
+                    <Badge tone="outline">
+                      <BadgeCheck /> Diverifikasi{s.verifiedBy ? ` oleh ${s.verifiedBy.name}` : ''}
+                      {s.verifiedAt ? ` · ${fmtShort(s.verifiedAt)}` : ''}
+                    </Badge>
                   </p>
                 )}
               </div>
               {editable && (
-                <div className="flex shrink-0 gap-1">
+                <div className="flex shrink-0 items-center gap-1">
                   <Button size="sm" variant={s.isVerified ? 'ghost' : 'outline'} loading={toggling === s.id} onClick={() => toggleVerify(s)}>
                     {s.isVerified ? 'Cabut verifikasi' : 'Verifikasi'}
                   </Button>
-                  <Button size="sm" variant="ghost" aria-label="Hapus sumber" onClick={() => setRemoving(s)}>
-                    <Trash2 className="size-3.5" />
+                  <Button
+                    size="icon-sm"
+                    variant="ghost"
+                    className="text-muted hover:bg-danger-wash hover:text-danger"
+                    aria-label="Hapus sumber"
+                    onClick={() => setRemoving(s)}
+                  >
+                    <Trash2 />
                   </Button>
                 </div>
               )}

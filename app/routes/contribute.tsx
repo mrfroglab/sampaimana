@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router';
-import { FileUp, Link2, Plus, Search, Trash2, X } from 'lucide-react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useNavigate } from 'react-router';
+import { Check, FileUp, Link2, Paperclip, Plus, Search, Trash2, X } from 'lucide-react';
 import type { Route } from './+types/contribute';
 import { seo } from '~/lib/seo';
 import { publicGet } from '~/lib/api';
@@ -8,7 +8,21 @@ import { STATUS_LABEL, STATUS_ORDER, cx, fmtBytes } from '~/lib/format';
 import { ApiError, api, requireUser } from '~/lib/session';
 import type { CaseDetail, CaseListItem } from '~/lib/types';
 import { StatusRail } from '~/components/StatusRail';
-import { Alert, Button, Field, Input, PageSkeleton, Select, Textarea, useToast } from '~/components/ui';
+import {
+  Alert,
+  Button,
+  Card,
+  CardHeader,
+  Field,
+  Input,
+  LinkButton,
+  PageHeader,
+  PageSkeleton,
+  Select,
+  Textarea,
+  buttonClass,
+  useToast,
+} from '~/components/ui';
 
 export const meta: Route.MetaFunction = () => seo({ title: 'Kirim kontribusi', path: '/kontribusi/baru', noindex: true });
 
@@ -37,6 +51,16 @@ const ACCEPT = '.jpg,.jpeg,.png,.webp,.pdf,.docx,.mp3,.wav';
 
 type Picked = Pick<CaseListItem, 'slug' | 'title' | 'caseNumber' | 'currentStatus'>;
 
+/** Card header title with a numbered step pill. */
+function Step({ n, children }: { n: number; children: ReactNode }) {
+  return (
+    <span className="flex items-center gap-2.5">
+      <span className="grid size-6 shrink-0 place-items-center rounded-full bg-ink text-xs font-medium text-on-ink num">{n}</span>
+      <span className="min-w-0">{children}</span>
+    </span>
+  );
+}
+
 function CasePicker({ value, onChange, error }: { value: Picked | null; onChange: (c: Picked | null) => void; error?: string }) {
   const [q, setQ] = useState('');
   const [results, setResults] = useState<CaseListItem[]>([]);
@@ -58,14 +82,14 @@ function CasePicker({ value, onChange, error }: { value: Picked | null; onChange
 
   if (value) {
     return (
-      <div className="border border-ink bg-raised p-4">
+      <div className="rounded-2xl border border-line bg-ink/[0.02] p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="font-mono text-[11px] text-muted">{value.caseNumber}</p>
-            <p className="mt-1 font-serif text-lg leading-snug text-ink">{value.title}</p>
+            <p className="truncate font-mono text-xs text-muted">{value.caseNumber}</p>
+            <p className="mt-1 text-[15px] font-semibold leading-snug tracking-[-0.01em] text-ink">{value.title}</p>
           </div>
-          <button type="button" onClick={() => onChange(null)} className="rounded p-1 text-muted hover:bg-sunk hover:text-ink" aria-label="Ganti kasus">
-            <X className="size-4" />
+          <button type="button" onClick={() => onChange(null)} className={buttonClass('ghost', 'icon-sm', '-mr-1 -mt-1 text-muted')} aria-label="Ganti kasus">
+            <X />
           </button>
         </div>
         <StatusRail status={value.currentStatus} className="mt-4" />
@@ -75,7 +99,7 @@ function CasePicker({ value, onChange, error }: { value: Picked | null; onChange
 
   return (
     <div className="relative">
-      <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-faint" />
+      <Search className="pointer-events-none absolute left-3.5 top-5 size-4 -translate-y-1/2 text-muted" aria-hidden />
       <Input
         value={q}
         onChange={(e) => {
@@ -84,14 +108,19 @@ function CasePicker({ value, onChange, error }: { value: Picked | null; onChange
         }}
         onFocus={() => setOpen(true)}
         placeholder="Ketik judul kasus atau nomor perkara"
-        className="pl-9"
+        className="pl-10"
         role="combobox"
+        aria-label="Cari kasus"
         aria-expanded={open && results.length > 0}
         aria-controls="case-results"
         invalid={!!error}
       />
       {open && results.length > 0 && (
-        <ul id="case-results" role="listbox" className="absolute inset-x-0 top-11 z-20 max-h-80 overflow-y-auto border border-line-strong bg-raised shadow-lg">
+        <ul
+          id="case-results"
+          role="listbox"
+          className="absolute inset-x-0 top-12 z-20 max-h-80 animate-fade overflow-y-auto rounded-2xl border border-line bg-raised p-1 shadow-pop"
+        >
           {results.map((c) => (
             <li key={c.id} role="option" aria-selected={false}>
               <button
@@ -100,11 +129,11 @@ function CasePicker({ value, onChange, error }: { value: Picked | null; onChange
                   onChange(c);
                   setOpen(false);
                 }}
-                className="w-full border-b border-line px-4 py-3 text-left last:border-0 hover:bg-sunk"
+                className="w-full rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-ink/[0.06]"
               >
-                <span className="block text-[15px] text-ink">{c.title}</span>
-                <span className="mt-0.5 block font-mono text-[11px] text-muted">
-                  {c.caseNumber} · {STATUS_LABEL[c.currentStatus]}
+                <span className="block text-sm font-medium text-ink">{c.title}</span>
+                <span className="mt-0.5 block truncate text-xs text-muted">
+                  <span className="font-mono">{c.caseNumber}</span> · {STATUS_LABEL[c.currentStatus]}
                 </span>
               </button>
             </li>
@@ -112,7 +141,7 @@ function CasePicker({ value, onChange, error }: { value: Picked | null; onChange
         </ul>
       )}
       {q.trim().length >= 2 && open && results.length === 0 && (
-        <p className="mt-2 text-sm text-muted">Tidak ditemukan. Kasus yang belum dipantau dapat diusulkan lewat koreksi di halaman Metodologi.</p>
+        <p className="mt-2 text-[13px] text-muted">Tidak ditemukan. Kasus yang belum dipantau dapat diusulkan lewat koreksi di halaman Metodologi.</p>
       )}
     </div>
   );
@@ -179,145 +208,185 @@ export default function Contribute({ loaderData }: Route.ComponentProps) {
     }
   };
 
+  const descLen = desc.trim().length;
+
   return (
-    <div className="container-page grid max-w-5xl gap-12 pt-10 lg:grid-cols-[1fr_280px]">
-      <form onSubmit={submit} className="min-w-0 space-y-8" noValidate>
-        <header className="border-b-2 border-ink pb-5">
-          <p className="kicker">Kontribusi publik</p>
-          <h1 className="mt-2 font-serif text-headline text-ink">Kirim kabar perkembangan</h1>
-          <p className="mt-3 max-w-2xl text-ink-soft">
-            Ceritakan apa yang terjadi, kapan, dan dari mana Anda tahu. Redaksi akan memeriksa bukti sebelum memasukkannya ke
-            linimasa.
-          </p>
-        </header>
+    <div className="container-page max-w-5xl pb-20">
+      <PageHeader
+        kicker="Kontribusi publik"
+        title="Kirim kabar perkembangan"
+        description="Ceritakan apa yang terjadi, kapan, dan dari mana Anda tahu. Redaksi akan memeriksa bukti sebelum memasukkannya ke linimasa."
+      />
 
-        {errors._ && <Alert tone="danger">{errors._}</Alert>}
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-6">
+        <form onSubmit={submit} className="min-w-0 space-y-4" noValidate>
+          {errors._ && <Alert tone="danger">{errors._}</Alert>}
 
-        <Field label="Kasus" error={errors.caseId}>
-          <CasePicker value={picked} onChange={setPicked} error={errors.caseId} />
-        </Field>
+          <Card>
+            <CardHeader title={<Step n={1}>Kasus</Step>} description="Cari kasus yang sudah dipantau Sampai Mana." />
+            <div className="p-5">
+              <CasePicker value={picked} onChange={setPicked} error={errors.caseId} />
+              {errors.caseId && (
+                <p className="mt-1.5 text-[13px] text-danger" role="alert">
+                  {errors.caseId}
+                </p>
+              )}
+            </div>
+          </Card>
 
-        <Field
-          label="Apa perkembangannya?"
-          htmlFor="description"
-          error={errors.description}
-          hint={
-            <span className="flex justify-between">
-              <span>Contoh: “Berkas dinyatakan lengkap (P-21) oleh Kejari pada 3 Maret, sidang perdana dijadwalkan 20 Maret.”</span>
-              <span className={cx('font-mono num', desc.trim().length < 30 && 'text-warn')}>{desc.trim().length}</span>
-            </span>
-          }
-        >
-          <Textarea id="description" rows={7} value={desc} onChange={(e) => setDesc(e.target.value)} invalid={!!errors.description} maxLength={5000} />
-        </Field>
+          <Card>
+            <CardHeader title={<Step n={2}>Perkembangan</Step>} description="Uraikan secara faktual apa yang terjadi dan kapan." />
+            <div className="space-y-5 p-5">
+              <Field
+                label="Apa perkembangannya?"
+                htmlFor="description"
+                error={errors.description}
+                hint={
+                  <span className="flex items-start justify-between gap-4">
+                    <span className="min-w-0">
+                      Contoh: “Berkas dinyatakan lengkap (P-21) oleh Kejari pada 3 Maret, sidang perdana dijadwalkan 20 Maret.”
+                    </span>
+                    <span className={cx('shrink-0 font-mono text-xs num', descLen < 30 ? 'text-muted' : 'text-ink')}>{descLen}</span>
+                  </span>
+                }
+              >
+                <Textarea id="description" rows={7} value={desc} onChange={(e) => setDesc(e.target.value)} invalid={!!errors.description} maxLength={5000} />
+              </Field>
 
-        <Field label="Menurut Anda, kasus kini di tahap apa?" htmlFor="proposedStage" optional>
-          <Select id="proposedStage" name="proposedStage" defaultValue="">
-            <option value="">Tidak yakin / tidak berubah</option>
-            {STATUS_ORDER.map((s) => (
-              <option key={s} value={s}>
-                {STATUS_LABEL[s]}
-              </option>
-            ))}
-          </Select>
-        </Field>
+              <Field label="Menurut Anda, kasus kini di tahap apa?" htmlFor="proposedStage" optional>
+                <Select id="proposedStage" name="proposedStage" defaultValue="">
+                  <option value="">Tidak yakin / tidak berubah</option>
+                  {STATUS_ORDER.map((s) => (
+                    <option key={s} value={s}>
+                      {STATUS_LABEL[s]}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+            </div>
+          </Card>
 
-        <fieldset className="space-y-4">
-          <legend className="text-[13px] font-medium text-ink">Bukti</legend>
-          {errors.proof && (
-            <p className="text-[13px] text-danger" role="alert">
-              {errors.proof}
-            </p>
-          )}
-          <div className="space-y-2">
-            {links.map((l, i) => (
-              <div key={i} className="flex gap-2">
-                <div className="relative flex-1">
-                  <Link2 className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-faint" />
-                  <Input
-                    type="url"
-                    inputMode="url"
-                    value={l}
-                    placeholder="https://sipp.pn-…go.id/… atau tautan berita"
-                    onChange={(e) => setLinks(links.map((x, j) => (j === i ? e.target.value : x)))}
-                    className="pl-9"
-                    aria-label={`Tautan bukti ${i + 1}`}
-                  />
-                </div>
-                {links.length > 1 && (
-                  <Button variant="ghost" onClick={() => setLinks(links.filter((_, j) => j !== i))} aria-label="Hapus tautan">
-                    <Trash2 className="size-4" />
+          <Card>
+            <CardHeader title={<Step n={3}>Bukti</Step>} description="Minimal satu tautan atau file." />
+            <fieldset className="space-y-5 p-5">
+              <legend className="sr-only">Bukti</legend>
+              {errors.proof && (
+                <p className="text-[13px] text-danger" role="alert">
+                  {errors.proof}
+                </p>
+              )}
+
+              <div className="space-y-2">
+                <p className="text-[13px] font-medium text-ink">Tautan</p>
+                {links.map((l, i) => (
+                  <div key={i} className="flex gap-2">
+                    <div className="relative min-w-0 flex-1">
+                      <Link2 className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden />
+                      <Input
+                        type="url"
+                        inputMode="url"
+                        value={l}
+                        placeholder="https://sipp.pn-…go.id/… atau tautan berita"
+                        onChange={(e) => setLinks(links.map((x, j) => (j === i ? e.target.value : x)))}
+                        className="pl-10"
+                        aria-label={`Tautan bukti ${i + 1}`}
+                      />
+                    </div>
+                    {links.length > 1 && (
+                      <Button variant="ghost" size="icon" className="size-10 text-muted" onClick={() => setLinks(links.filter((_, j) => j !== i))} aria-label="Hapus tautan">
+                        <Trash2 />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                {links.length < 10 && (
+                  <Button variant="ghost" size="sm" onClick={() => setLinks([...links, ''])}>
+                    <Plus /> Tambah tautan
                   </Button>
                 )}
               </div>
-            ))}
-            {links.length < 10 && (
-              <Button variant="quiet" size="sm" onClick={() => setLinks([...links, ''])}>
-                <Plus className="size-4" /> Tambah tautan
-              </Button>
-            )}
-          </div>
 
-          <div
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => {
-              e.preventDefault();
-              addFiles(e.dataTransfer.files);
-            }}
-            className="border border-dashed border-line-strong bg-raised p-5"
-          >
-            <div className="flex flex-wrap items-center gap-4">
-              <FileUp className="size-6 text-faint" />
-              <div className="min-w-0 flex-1 text-sm text-muted">
-                <p className="text-ink">Lampirkan dokumen atau foto</p>
-                <p>JPG, PNG, WEBP, PDF, DOCX, MP3, WAV · maks 5 file, 10 MB per file. Hanya redaksi yang dapat membuka.</p>
+              <div className="space-y-2">
+                <p className="text-[13px] font-medium text-ink">File</p>
+                <div
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    addFiles(e.dataTransfer.files);
+                  }}
+                  className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-line-strong bg-ink/[0.02] px-5 py-8 text-center transition-colors hover:border-ink/30"
+                >
+                  <span className="grid size-11 place-items-center rounded-full bg-ink/[0.06] text-muted">
+                    <FileUp className="size-5" aria-hidden />
+                  </span>
+                  <div className="max-w-sm text-sm">
+                    <p className="font-medium text-ink">Lampirkan dokumen atau foto</p>
+                    <p className="mt-1 text-[13px] text-muted">
+                      Seret ke sini atau pilih file. JPG, PNG, WEBP, PDF, DOCX, MP3, WAV · maks 5 file, 10 MB per file. Hanya redaksi
+                      yang dapat membuka.
+                    </p>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => fileInput.current?.click()} disabled={files.length >= MAX_FILES}>
+                    Pilih file
+                  </Button>
+                  <input ref={fileInput} type="file" multiple accept={ACCEPT} className="hidden" onChange={(e) => addFiles(e.target.files)} />
+                </div>
+                {files.length > 0 && (
+                  <ul className="divide-y divide-line overflow-hidden rounded-2xl border border-line">
+                    {files.map((f, i) => (
+                      <li key={`${f.name}-${i}`} className="flex items-center gap-3 py-1.5 pl-4 pr-1.5 text-sm">
+                        <Paperclip className="size-4 shrink-0 text-muted" aria-hidden />
+                        <span className="min-w-0 flex-1 truncate text-ink">{f.name}</span>
+                        <span className="shrink-0 font-mono text-xs text-muted num">{fmtBytes(f.size)}</span>
+                        <button
+                          type="button"
+                          onClick={() => setFiles(files.filter((_, j) => j !== i))}
+                          className={buttonClass('ghost', 'icon-sm', 'text-muted hover:text-danger')}
+                          aria-label={`Hapus ${f.name}`}
+                        >
+                          <X />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
-              <Button variant="outline" size="sm" onClick={() => fileInput.current?.click()} disabled={files.length >= MAX_FILES}>
-                Pilih file
-              </Button>
-              <input ref={fileInput} type="file" multiple accept={ACCEPT} className="hidden" onChange={(e) => addFiles(e.target.files)} />
-            </div>
-            {files.length > 0 && (
-              <ul className="mt-4 divide-y divide-line border-t border-line">
-                {files.map((f, i) => (
-                  <li key={`${f.name}-${i}`} className="flex items-center justify-between gap-3 py-2 text-sm">
-                    <span className="truncate text-ink">{f.name}</span>
-                    <span className="flex items-center gap-3">
-                      <span className="font-mono text-xs text-muted">{fmtBytes(f.size)}</span>
-                      <button type="button" onClick={() => setFiles(files.filter((_, j) => j !== i))} className="text-muted hover:text-danger" aria-label={`Hapus ${f.name}`}>
-                        <X className="size-4" />
-                      </button>
-                    </span>
+            </fieldset>
+          </Card>
+
+          <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:items-center sm:justify-end">
+            <LinkButton to={picked ? `/kasus/${picked.slug}` : '/kasus'} variant="ghost" size="lg">
+              Batal
+            </LinkButton>
+            <Button type="submit" size="lg" loading={busy}>
+              Kirim untuk ditinjau
+            </Button>
+          </div>
+        </form>
+
+        <aside className="min-w-0">
+          <div className="space-y-4 lg:sticky lg:top-24">
+            <Card className="p-5">
+              <p className="text-[15px] font-semibold tracking-[-0.01em] text-ink">Yang membuat kiriman cepat diterima</p>
+              <ul className="mt-3 space-y-2.5 text-[13px] text-ink-soft">
+                {[
+                  'Tanggal kejadian yang jelas.',
+                  'Tautan ke sumber primer: SIPP pengadilan, rilis resmi, dokumen sidang.',
+                  'Bahasa yang faktual, tanpa opini atau tuduhan.',
+                ].map((t) => (
+                  <li key={t} className="flex gap-2.5">
+                    <Check className="mt-0.5 size-4 shrink-0 text-ink" aria-hidden />
+                    <span>{t}</span>
                   </li>
                 ))}
               </ul>
-            )}
+            </Card>
+            <p className="px-1 text-[13px] text-muted">
+              Akun baru dapat memiliki satu kiriman yang menunggu moderasi. Kiriman yang ditolak selalu disertai alasan.
+            </p>
           </div>
-        </fieldset>
-
-        <div className="flex items-center justify-end gap-3 border-t border-line pt-6">
-          <Link to={picked ? `/kasus/${picked.slug}` : '/kasus'} className="text-sm text-muted hover:text-ink">
-            Batal
-          </Link>
-          <Button type="submit" size="lg" loading={busy}>
-            Kirim untuk ditinjau
-          </Button>
-        </div>
-      </form>
-
-      <aside className="space-y-6 text-sm text-ink-soft lg:pt-28">
-        <div className="border-l-2 border-accent pl-4">
-          <p className="font-medium text-ink">Yang membuat kiriman cepat diterima</p>
-          <ul className="mt-2 list-disc space-y-1.5 pl-4 text-[13.5px]">
-            <li>Tanggal kejadian yang jelas.</li>
-            <li>Tautan ke sumber primer: SIPP pengadilan, rilis resmi, dokumen sidang.</li>
-            <li>Bahasa yang faktual, tanpa opini atau tuduhan.</li>
-          </ul>
-        </div>
-        <p className="text-[13px] text-muted">
-          Akun baru dapat memiliki satu kiriman yang menunggu moderasi. Kiriman yang ditolak selalu disertai alasan.
-        </p>
-      </aside>
+        </aside>
+      </div>
     </div>
   );
 }

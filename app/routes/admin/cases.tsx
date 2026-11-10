@@ -1,8 +1,18 @@
 import { Form, Link, useSearchParams } from 'react-router';
-import { Plus, Search } from 'lucide-react';
+import { ChevronRight, FileText, Pencil, Plus, Search } from 'lucide-react';
 import type { Route } from './+types/cases';
 import { Badge, Button, CategoryTag, EmptyState, Input, LinkButton, PageSkeleton, Pagination, RelTime, Select } from '~/components/ui';
-import { AdminPageHeader, Tabs, useCanEdit, type AdminCaseRow } from '~/components/admin/shared';
+import {
+  AdminPageHeader,
+  TableCard,
+  Tabs,
+  rowClass,
+  tdClass,
+  thClass,
+  theadClass,
+  useCanEdit,
+  type AdminCaseRow,
+} from '~/components/admin/shared';
 import { STATUS_LABEL, STATUS_ORDER, cx } from '~/lib/format';
 import { seo } from '~/lib/seo';
 import { api, requireUser } from '~/lib/session';
@@ -28,8 +38,6 @@ export function HydrateFallback() {
   return <PageSkeleton />;
 }
 
-const th = 'py-2 font-mono text-[11px] font-medium uppercase tracking-[0.1em] text-muted';
-
 export default function AdminCases({ loaderData }: Route.ComponentProps) {
   const { items, meta } = loaderData;
   const [params] = useSearchParams();
@@ -45,6 +53,22 @@ export default function AdminCases({ loaderData }: Route.ComponentProps) {
     return qs ? `?${qs}` : '/redaksi/kasus';
   };
 
+  const queue = (c: AdminCaseRow) =>
+    c.pendingContributions > 0 || c.openCorrections > 0 ? (
+      <div className="flex flex-wrap gap-1">
+        {c.pendingContributions > 0 && (
+          <Badge tone="ink">
+            <span className="num">{c.pendingContributions}</span> kontribusi
+          </Badge>
+        )}
+        {c.openCorrections > 0 && (
+          <Badge tone="outline">
+            <span className="num">{c.openCorrections}</span> koreksi
+          </Badge>
+        )}
+      </div>
+    ) : null;
+
   return (
     <div className="space-y-6">
       <AdminPageHeader
@@ -54,111 +78,125 @@ export default function AdminCases({ loaderData }: Route.ComponentProps) {
         actions={
           editable && (
             <LinkButton to="/redaksi/kasus/baru">
-              <Plus className="size-4" /> Kasus baru
+              <Plus /> Kasus baru
             </LinkButton>
           )
         }
       />
 
-      <Tabs<ArchiveState>
-        label="Status arsip"
-        value={state}
-        hrefFor={(v) => hrefWith({ state: v === 'active' ? null : v })}
-        options={[
-          { value: 'active', label: 'Aktif' },
-          { value: 'inactive', label: 'Diarsipkan' },
-          { value: 'all', label: 'Semua' },
-        ]}
-      />
+      <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+        <Tabs<ArchiveState>
+          label="Status arsip"
+          value={state}
+          hrefFor={(v) => hrefWith({ state: v === 'active' ? null : v })}
+          options={[
+            { value: 'active', label: 'Aktif' },
+            { value: 'inactive', label: 'Diarsipkan' },
+            { value: 'all', label: 'Semua' },
+          ]}
+        />
 
-      <Form method="get" className="flex flex-col gap-2 sm:flex-row" role="search">
-        {state !== 'active' && <input type="hidden" name="state" value={state} />}
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-faint" aria-hidden />
-          <Input name="q" defaultValue={params.get('q') ?? ''} placeholder="Judul atau nomor perkara" aria-label="Cari kasus" className="pl-9" />
-        </div>
-        <Select name="status" defaultValue={params.get('status') ?? ''} aria-label="Filter tahap" className="sm:w-48">
-          <option value="">Semua tahap</option>
-          {STATUS_ORDER.map((s) => (
-            <option key={s} value={s}>
-              {STATUS_LABEL[s]}
-            </option>
-          ))}
-        </Select>
-        <Button type="submit" variant="outline">
-          Terapkan
-        </Button>
-      </Form>
+        <Form method="get" className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center" role="search">
+          {state !== 'active' && <input type="hidden" name="state" value={state} />}
+          <div className="relative min-w-0 flex-1 xl:w-72 xl:flex-none">
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden />
+            <Input name="q" defaultValue={params.get('q') ?? ''} placeholder="Judul atau nomor perkara" aria-label="Cari kasus" className="pl-10" />
+          </div>
+          <div className="flex gap-2">
+            <Select name="status" defaultValue={params.get('status') ?? ''} aria-label="Filter tahap" className="min-w-0 flex-1 sm:w-44 sm:flex-none">
+              <option value="">Semua tahap</option>
+              {STATUS_ORDER.map((s) => (
+                <option key={s} value={s}>
+                  {STATUS_LABEL[s]}
+                </option>
+              ))}
+            </Select>
+            <Button type="submit" variant="secondary" className="h-10">
+              Terapkan
+            </Button>
+          </div>
+        </Form>
+      </div>
 
       {items.length === 0 ? (
-        <EmptyState title="Tidak ada kasus">
+        <EmptyState title="Tidak ada kasus" icon={<FileText />}>
           {filtered ? 'Coba ubah kata kunci atau filter.' : 'Belum ada kasus pada daftar ini.'}
         </EmptyState>
       ) : (
         <>
-          <div className="hidden overflow-x-auto md:block">
+          <TableCard className="hidden md:block">
             <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="border-b-2 border-ink text-left">
-                  <th className={cx(th, 'pr-4')}>Kasus</th>
-                  <th className={cx(th, 'px-3')}>Tahap</th>
-                  <th className={cx(th, 'px-3 text-right')} title="Jumlah tahapan / sumber">
+              <thead className={theadClass}>
+                <tr>
+                  <th className={thClass}>Kasus</th>
+                  <th className={thClass}>Tahap</th>
+                  <th className={cx(thClass, 'text-right')} title="Jumlah tahapan / sumber">
                     Thp / Smb
                   </th>
-                  <th className={cx(th, 'px-3')}>Antrean</th>
-                  <th className={cx(th, 'pl-3 text-right')}>Aktivitas</th>
+                  <th className={thClass}>Antrean</th>
+                  <th className={cx(thClass, 'text-right')}>Aktivitas</th>
+                  <th className={thClass}>
+                    <span className="sr-only">Aksi</span>
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
                 {items.map((c) => (
-                  <tr key={c.id} className={cx('group align-top hover:bg-raised', !c.isActive && 'text-muted')}>
-                    <td className="py-3 pr-4">
-                      <Link to={`/redaksi/kasus/${c.id}`} className="font-medium text-ink group-hover:underline">
+                  <tr key={c.id} className={cx(rowClass, 'group')}>
+                    <td className={cx(tdClass, 'min-w-[260px]')}>
+                      <Link to={`/redaksi/kasus/${c.id}`} className={cx('font-medium hover:underline', c.isActive ? 'text-ink' : 'text-muted')}>
                         {c.title}
                       </Link>
                       <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
-                        <CategoryTag name={c.category.name} color={c.category.color} className="text-xs" />
-                        <span className="font-mono text-[11px] text-faint">{c.caseNumber}</span>
-                        {!c.isActive && <Badge>Diarsipkan</Badge>}
+                        <CategoryTag name={c.category.name} color={c.category.color} showColor />
+                        <span className="font-mono text-xs text-muted">{c.caseNumber}</span>
+                        {!c.isActive && <Badge tone="outline">Diarsipkan</Badge>}
                       </div>
                     </td>
-                    <td className="whitespace-nowrap px-3 py-3">{STATUS_LABEL[c.currentStatus]}</td>
-                    <td className="px-3 py-3 text-right font-mono text-xs num">
+                    <td className={tdClass}>
+                      <Badge>{STATUS_LABEL[c.currentStatus]}</Badge>
+                    </td>
+                    <td className={cx(tdClass, 'whitespace-nowrap text-right font-mono text-xs text-ink-soft num')}>
                       {c._count.stages} / {c._count.sources}
                     </td>
-                    <td className="px-3 py-3">
-                      <div className="flex flex-wrap gap-1">
-                        {c.pendingContributions > 0 && <Badge tone="accent">{c.pendingContributions} kontribusi</Badge>}
-                        {c.openCorrections > 0 && <Badge tone="danger">{c.openCorrections} koreksi</Badge>}
-                        {!c.pendingContributions && !c.openCorrections && <span className="text-faint">—</span>}
-                      </div>
-                    </td>
-                    <td className="whitespace-nowrap py-3 pl-3 text-right text-xs text-muted">
+                    <td className={tdClass}>{queue(c) ?? <span className="text-faint">—</span>}</td>
+                    <td className={cx(tdClass, 'whitespace-nowrap text-right text-[13px] text-muted')}>
                       <RelTime date={c.lastActivityAt} />
+                    </td>
+                    <td className={cx(tdClass, 'w-12 text-right')}>
+                      <LinkButton to={`/redaksi/kasus/${c.id}`} variant="ghost" size="icon-sm" aria-label={`Buka ${c.title}`} className="text-muted">
+                        {editable ? <Pencil /> : <ChevronRight />}
+                      </LinkButton>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
+          </TableCard>
 
-          <ul className="divide-y divide-line border-y border-line md:hidden">
+          <ul className="card divide-y divide-line overflow-hidden md:hidden">
             {items.map((c) => (
               <li key={c.id}>
-                <Link to={`/redaksi/kasus/${c.id}`} className="block py-3">
-                  <p className="font-medium text-ink">{c.title}</p>
-                  <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
-                    <span>{STATUS_LABEL[c.currentStatus]}</span>
-                    <span className="font-mono">{c.caseNumber}</span>
-                    <RelTime date={c.lastActivityAt} />
-                  </p>
-                  {(c.pendingContributions > 0 || c.openCorrections > 0 || !c.isActive) && (
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {!c.isActive && <Badge>Diarsipkan</Badge>}
-                      {c.pendingContributions > 0 && <Badge tone="accent">{c.pendingContributions} kontribusi</Badge>}
-                      {c.openCorrections > 0 && <Badge tone="danger">{c.openCorrections} koreksi</Badge>}
+                <Link to={`/redaksi/kasus/${c.id}`} className="flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-ink/[0.03]">
+                  <div className="min-w-0 flex-1">
+                    <p className={cx('font-medium', c.isActive ? 'text-ink' : 'text-muted')}>{c.title}</p>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
+                      <CategoryTag name={c.category.name} color={c.category.color} showColor />
+                      <span className="font-mono">{c.caseNumber}</span>
                     </div>
-                  )}
+                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                      <Badge>{STATUS_LABEL[c.currentStatus]}</Badge>
+                      {!c.isActive && <Badge tone="outline">Diarsipkan</Badge>}
+                      {queue(c)}
+                    </div>
+                    <p className="mt-2 text-xs text-muted">
+                      <span className="num">
+                        {c._count.stages} tahapan · {c._count.sources} sumber
+                      </span>{' '}
+                      · <RelTime date={c.lastActivityAt} />
+                    </p>
+                  </div>
+                  <ChevronRight className="mt-0.5 size-4 shrink-0 text-faint" aria-hidden />
                 </Link>
               </li>
             ))}

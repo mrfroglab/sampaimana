@@ -49,9 +49,9 @@ export default function Login() {
           Masuk
         </Button>
       </form>
-      <p className="mt-6 border-t border-line pt-5 text-sm text-muted">
+      <p className="mt-6 border-t border-line pt-5 text-center text-sm text-muted">
         Belum punya akun?{' '}
-        <Link to={`/daftar${params.get('next') ? `?next=${encodeURIComponent(next)}` : ''}`} className="link text-ink">
+        <Link to={`/daftar${params.get('next') ? `?next=${encodeURIComponent(next)}` : ''}`} className="link font-medium text-ink">
           Daftar sebagai kontributor
         </Link>
       </p>

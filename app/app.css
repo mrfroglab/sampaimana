@@ -1,60 +1,76 @@
 @import 'tailwindcss';
 
 /*
- * Sampai Mana — design tokens.
- * Editorial palette: warm paper, ink, one brick accent taken from the logo.
- * Light/dark values swap through [data-theme]; utilities read the variables.
+ * Sampai Mana — design tokens ("clinical blueprint on frosted paper").
+ *
+ * Achromatic by default: canvas → card → input fill layering, hairline borders,
+ * whisper-quiet elevation. One chromatic hue, ember, reserved for the live
+ * "current stage" mark, the logo's question mark, and destructive/error states.
+ * See DESIGN.md for the rules. Light/dark values swap through [data-theme].
  */
 :root,
 [data-theme='light'] {
-  --paper: #f5f2ea;
-  --paper-raised: #fbfaf6;
-  --paper-sunk: #ece7db;
-  --ink: #1a1813;
-  --ink-soft: #3b372f;
-  --muted: #6b665b;
-  --faint: #969083;
-  --line: #ddd6c6;
-  --line-strong: #bdb4a1;
-  --accent: #b23c1c;
-  --accent-ink: #8f2e13;
-  --accent-wash: #f6e2d6;
-  --ok: #2e6a3d;
-  --ok-wash: #dfeedd;
-  --warn: #9a6400;
-  --warn-wash: #f7ebcc;
-  --danger: #a32121;
-  --danger-wash: #f6dcdc;
-  --focus: #1f5fbf;
+  --paper: #f5f5f5; /* canvas: page background */
+  --paper-raised: #ffffff; /* card / popover surface */
+  --paper-alt: #fafafa; /* sidebar, subtle card variant */
+  --paper-sunk: #f5f5f5; /* input fill, hover fill on cards */
+  --ink: #0a0a0a;
+  --ink-soft: #171717;
+  --muted: #737373;
+  --faint: #a3a3a3;
+  --line: #e5e5e5;
+  --line-strong: #d4d4d4;
+  --accent: #0a0a0a; /* emphasis is ink, never color */
+  --accent-ink: #0a0a0a;
+  --accent-wash: #f5f5f5;
+  --ember: #e7000b;
+  --ember-wash: #fef2f2;
+  --ok: #0a0a0a;
+  --ok-wash: #f5f5f5;
+  --warn: #e7000b;
+  --warn-wash: #fef2f2;
+  --danger: #e7000b;
+  --danger-wash: #fef2f2;
+  --focus: #737373;
+  --on-ink: #fafafa;
+  --shadow-card: 0 0 0 1px rgb(23 23 23 / 0.02), 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+  --shadow-pop: 0 0 0 1px rgb(23 23 23 / 0.04), 0 12px 32px -8px rgb(0 0 0 / 0.16), 0 4px 8px -4px rgb(0 0 0 / 0.08);
   color-scheme: light;
 }
 
 [data-theme='dark'] {
-  --paper: #13120f;
-  --paper-raised: #1b1a16;
-  --paper-sunk: #0e0d0b;
-  --ink: #eee8da;
-  --ink-soft: #d2cbbb;
-  --muted: #a29b8c;
-  --faint: #7a7468;
-  --line: #2f2c26;
-  --line-strong: #4a453c;
-  --accent: #e3693f;
-  --accent-ink: #f08a63;
-  --accent-wash: #3a2018;
-  --ok: #7cc28a;
-  --ok-wash: #1b2c1f;
-  --warn: #e0b153;
-  --warn-wash: #2f2614;
-  --danger: #ef7d7d;
-  --danger-wash: #351a1a;
-  --focus: #7aa7ff;
+  --paper: #0a0a0a;
+  --paper-raised: #171717;
+  --paper-alt: #111111;
+  --paper-sunk: #262626;
+  --ink: #fafafa;
+  --ink-soft: #e5e5e5;
+  --muted: #a1a1a1;
+  --faint: #737373;
+  --line: #262626;
+  --line-strong: #404040;
+  --accent: #fafafa;
+  --accent-ink: #fafafa;
+  --accent-wash: #262626;
+  --ember: #ff6467;
+  --ember-wash: #2a1415;
+  --ok: #fafafa;
+  --ok-wash: #262626;
+  --warn: #ff6467;
+  --warn-wash: #2a1415;
+  --danger: #ff6467;
+  --danger-wash: #2a1415;
+  --focus: #a1a1a1;
+  --on-ink: #0a0a0a;
+  --shadow-card: 0 0 0 1px rgb(255 255 255 / 0.02);
+  --shadow-pop: 0 0 0 1px rgb(255 255 255 / 0.06), 0 16px 40px -8px rgb(0 0 0 / 0.7);
   color-scheme: dark;
 }
 
 @theme inline {
   --color-paper: var(--paper);
   --color-raised: var(--paper-raised);
+  --color-alt: var(--paper-alt);
   --color-sunk: var(--paper-sunk);
   --color-ink: var(--ink);
   --color-ink-soft: var(--ink-soft);
@@ -65,6 +81,8 @@
   --color-accent: var(--accent);
   --color-accent-ink: var(--accent-ink);
   --color-accent-wash: var(--accent-wash);
+  --color-ember: var(--ember);
+  --color-ember-wash: var(--ember-wash);
   --color-ok: var(--ok);
   --color-ok-wash: var(--ok-wash);
   --color-warn: var(--warn);
@@ -72,27 +90,67 @@
   --color-danger: var(--danger);
   --color-danger-wash: var(--danger-wash);
   --color-focus: var(--focus);
+  --color-on-ink: var(--on-ink);
+  --shadow-card: var(--shadow-card);
+  --shadow-pop: var(--shadow-pop);
 }
 
 @theme {
-  --font-serif: 'Newsreader', 'Iowan Old Style', Georgia, serif;
-  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', monospace;
-  --text-display: clamp(2.6rem, 1.6rem + 4.2vw, 5.4rem);
-  --text-display--line-height: 0.98;
-  --text-headline: clamp(1.9rem, 1.4rem + 2vw, 3rem);
-  --text-headline--line-height: 1.05;
+  --font-sans: 'Geist', 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* Legacy alias: there is no serif in this system. */
+  --font-serif: 'Geist', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  /* Type scale (from the reference; only display is fluid) */
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1.33;
+  --text-body: 0.875rem;
+  --text-body--line-height: 1.43;
+  --text-body-lg: 1rem;
+  --text-body-lg--line-height: 1.5;
+  --text-subheading: 1.125rem;
+  --text-subheading--line-height: 1.56;
+  --text-heading-sm: 1.5rem;
+  --text-heading-sm--line-height: 1.33;
+  --text-heading-sm--letter-spacing: -0.025em;
+  --text-heading: 1.875rem;
+  --text-heading--line-height: 1.2;
+  --text-heading--letter-spacing: -0.025em;
+  --text-heading-lg: 2.25rem;
+  --text-heading-lg--line-height: 1.11;
+  --text-heading-lg--letter-spacing: -0.03em;
+  --text-display: clamp(2.375rem, 1.6rem + 3.2vw, 3.5rem);
+  --text-display--line-height: 1.05;
+  --text-display--letter-spacing: -0.05em;
+  /* Legacy alias used by older pages */
+  --text-headline: clamp(1.875rem, 1.5rem + 1.4vw, 2.25rem);
+  --text-headline--line-height: 1.11;
+  --text-headline--letter-spacing: -0.03em;
+
+  /* Radius: 6 small, 10 nested, 18 interactive, 24 containers */
+  --radius-sm: 6px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+  --radius-2xl: 18px;
+  --radius-3xl: 24px;
+
   --animate-pulse-dot: pulse-dot 2.4s ease-out infinite;
-  --animate-rise: rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-rise: rise 0.4s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-fade: fade 0.2s ease-out both;
 
   @keyframes pulse-dot {
-    0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--accent) 55%, transparent); }
-    70% { box-shadow: 0 0 0 10px transparent; }
+    0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--ember) 45%, transparent); }
+    70% { box-shadow: 0 0 0 8px transparent; }
     100% { box-shadow: 0 0 0 0 transparent; }
   }
   @keyframes rise {
-    from { opacity: 0; transform: translateY(6px); }
+    from { opacity: 0; transform: translateY(4px); }
     to { opacity: 1; transform: none; }
+  }
+  @keyframes fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 }
 
@@ -104,21 +162,22 @@
     text-rendering: optimizeLegibility;
   }
   body {
-    @apply font-sans antialiased;
-    font-feature-settings: 'ss02', 'cv05';
+    @apply font-sans text-body antialiased;
+    background: var(--paper);
+    font-feature-settings: 'ss01', 'cv11';
     min-height: 100dvh;
   }
   ::selection {
-    background: var(--accent);
-    color: var(--paper-raised);
+    background: var(--ink);
+    color: var(--on-ink);
   }
   :focus-visible {
     outline: 2px solid var(--focus);
     outline-offset: 2px;
-    border-radius: 2px;
   }
-  h1, h2, h3 {
+  h1, h2, h3, h4 {
     text-wrap: balance;
+    font-weight: 600;
   }
   p {
     text-wrap: pretty;
@@ -134,34 +193,54 @@
 
 @layer components {
   .container-page {
-    @apply mx-auto w-full max-w-[1200px] px-4 sm:px-6 lg:px-8;
+    @apply mx-auto w-full max-w-[1280px] px-4 sm:px-6 lg:px-8;
   }
+  /* 12px uppercase caption label */
   .kicker {
-    @apply font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted;
+    @apply text-caption font-medium uppercase tracking-[0.05em] text-muted;
+  }
+  /* White card on the canvas: hairline border, 24px radius, barely-there lift */
+  .card {
+    @apply rounded-3xl border border-line bg-raised shadow-card;
+  }
+  /* Card that reacts on hover (whole card is a link target) */
+  .card-hover {
+    @apply transition-[border-color,box-shadow] hover:border-line-strong hover:shadow-pop;
+  }
+  /* Nested tile inside a card */
+  .tile {
+    @apply rounded-lg bg-sunk;
   }
   .rule {
     border-top: 1px solid var(--line);
   }
-  .rule-strong {
-    border-top: 2px solid var(--ink);
-  }
   .link {
-    @apply underline decoration-line-strong decoration-1 underline-offset-[3px] transition-colors hover:decoration-accent hover:text-accent-ink;
+    @apply underline decoration-line-strong decoration-1 underline-offset-[3px] transition-colors hover:decoration-ink;
   }
+  /* Long-form reading text */
   .prose-editorial {
-    @apply font-serif text-[1.15rem] leading-[1.7] text-ink-soft;
+    @apply text-body-lg leading-[1.75] text-ink-soft;
   }
   .prose-editorial p + p {
-    @apply mt-5;
-  }
-  .prose-editorial p:first-of-type::first-letter {
-    @apply float-left mr-2 mt-1 font-serif text-[3.6rem] leading-[0.8] text-ink;
+    @apply mt-4;
   }
   .num {
     font-variant-numeric: tabular-nums;
   }
+  /* Blueprint grid backdrop for heroes */
+  .blueprint {
+    background-image:
+      linear-gradient(to right, color-mix(in oklab, var(--ink) 5%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in oklab, var(--ink) 5%, transparent) 1px, transparent 1px);
+    background-size: 32px 32px;
+    mask-image: radial-gradient(ellipse 80% 70% at 50% 0%, #000 40%, transparent 100%);
+  }
+  /* Legacy no-op kept so old markup does not break */
   .paper-grain {
-    background-image: radial-gradient(color-mix(in oklab, var(--ink) 6%, transparent) 0.6px, transparent 0.6px);
-    background-size: 3px 3px;
+    background-image: none;
+  }
+  /* Keyboard hint chip, e.g. ⌘K */
+  .kbd {
+    @apply inline-flex h-5 min-w-5 items-center justify-center rounded-sm border border-line bg-raised px-1 font-mono text-[11px] font-medium text-muted;
   }
 }

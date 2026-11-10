@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Link, useRevalidator, useSearchParams } from 'react-router';
-import { Archive, ArchiveRestore, ArrowLeft, ExternalLink, Users } from 'lucide-react';
+import { useRevalidator, useSearchParams } from 'react-router';
+import { Archive, ArchiveRestore, ExternalLink, Users } from 'lucide-react';
 import type { Route } from './+types/case-edit';
-import { Alert, Badge, Button, CategoryTag, PageSkeleton, useToast } from '~/components/ui';
+import { Alert, Badge, Button, Card, CardHeader, CategoryTag, PageSkeleton, buttonClass, useToast } from '~/components/ui';
 import { StatusRail } from '~/components/StatusRail';
 import { CaseForm } from '~/components/admin/CaseForm';
 import { StageEditor } from '~/components/admin/StageEditor';
@@ -60,29 +60,27 @@ export default function AdminCaseEdit({ loaderData }: Route.ComponentProps) {
 
   return (
     <div className="space-y-6">
-      <Link to="/redaksi/kasus" className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink">
-        <ArrowLeft className="size-4" /> Semua kasus
-      </Link>
-
       <AdminPageHeader
+        crumbs={[{ to: '/redaksi/kasus', label: 'Kasus' }, { label: c.title }]}
         kicker={
           <span className="flex flex-wrap items-center gap-x-3 gap-y-1 normal-case tracking-normal">
-            <CategoryTag name={c.category.name} color={c.category.color} className="text-xs" />
-            <span className="font-mono text-[11px] text-faint">{c.caseNumber}</span>
+            <CategoryTag name={c.category.name} color={c.category.color} showColor />
+            <span className="font-mono text-xs font-normal text-muted">{c.caseNumber}</span>
+            {!c.isActive && <Badge tone="outline">Diarsipkan</Badge>}
           </span>
         }
         title={c.title}
         actions={
           <>
             {c.isActive && (
-              <a href={`/kasus/${c.slug}`} target="_blank" rel="noopener" className="inline-flex h-10 items-center gap-1.5 px-2 text-sm text-ink-soft hover:text-ink">
-                Halaman publik <ExternalLink className="size-3.5" />
+              <a href={`/kasus/${c.slug}`} target="_blank" rel="noopener" className={buttonClass('ghost', 'md')}>
+                Halaman publik <ExternalLink />
               </a>
             )}
             {editable &&
               (c.isActive ? (
-                <Button variant="outline" onClick={() => setArchiving(true)}>
-                  <Archive className="size-4" /> Arsipkan
+                <Button variant="danger" onClick={() => setArchiving(true)}>
+                  <Archive /> Arsipkan
                 </Button>
               ) : (
                 <Button
@@ -97,7 +95,7 @@ export default function AdminCaseEdit({ loaderData }: Route.ComponentProps) {
                     }
                   }}
                 >
-                  <ArchiveRestore className="size-4" /> Pulihkan
+                  <ArchiveRestore /> Pulihkan
                 </Button>
               ))}
           </>
@@ -110,15 +108,21 @@ export default function AdminCaseEdit({ loaderData }: Route.ComponentProps) {
         </Alert>
       )}
 
-      <div className="grid gap-6 border border-line bg-raised p-4 sm:p-5 md:grid-cols-[1fr_auto] md:items-center">
+      <Card className="grid grid-cols-1 gap-6 p-5 sm:p-6 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
         <StatusRail status={c.currentStatus} stages={c.stages} size="lg" />
-        <div className="flex gap-6 font-mono text-xs text-muted md:flex-col md:gap-1 md:border-l md:border-line md:pl-5">
-          <span className="inline-flex items-center gap-1.5 num">
-            <Users className="size-3.5" /> {c._count.follows} pengikut
-          </span>
-          <span>Aktivitas {fmtDateTime(c.lastActivityAt)}</span>
-        </div>
-      </div>
+        <dl className="flex flex-wrap gap-x-6 gap-y-3 border-t border-line pt-4 text-[13px] md:flex-col md:gap-3 md:border-l md:border-t-0 md:pl-6 md:pt-0">
+          <div>
+            <dt className="kicker">Pengikut</dt>
+            <dd className="mt-0.5 inline-flex items-center gap-1.5 font-medium text-ink num">
+              <Users className="size-3.5 text-muted" aria-hidden /> {c._count.follows}
+            </dd>
+          </div>
+          <div>
+            <dt className="kicker">Aktivitas terakhir</dt>
+            <dd className="mt-0.5 font-medium text-ink num">{fmtDateTime(c.lastActivityAt)}</dd>
+          </div>
+        </dl>
+      </Card>
 
       <Tabs<Tab>
         label="Bagian kasus"
@@ -132,13 +136,13 @@ export default function AdminCaseEdit({ loaderData }: Route.ComponentProps) {
         ]}
       />
 
-      <div className="pt-2">
+      <div>
         {tab === 'linimasa' && (
           <StageEditor caseId={c.id} stages={c.stages} currentStatus={c.currentStatus} editable={editable} onChanged={refresh} />
         )}
         {tab === 'sumber' && <SourcesManager caseId={c.id} sources={c.sources} stages={c.stages} editable={editable} onChanged={refresh} />}
         {tab === 'detail' && (
-          <div className="max-w-3xl">
+          <div className="max-w-4xl">
             <CaseForm
               key={`${c.lastActivityAt}-${c.currentStatus}`}
               initial={c}
@@ -154,26 +158,30 @@ export default function AdminCaseEdit({ loaderData }: Route.ComponentProps) {
           </div>
         )}
         {tab === 'riwayat' && (
-          <div>
-            <p className="text-sm text-muted">Riwayat ini tampil publik di halaman kasus (50 entri terakhir).</p>
-            <ol className="mt-4 divide-y divide-line border-y border-line">
-              {c.revisions.map((r) => (
-                <li key={r.id} className="grid gap-1 py-3 sm:grid-cols-[150px_1fr] sm:gap-4">
-                  <div className="font-mono text-[11.5px] text-muted num">{fmtDateTime(r.createdAt)}</div>
-                  <div>
-                    <p className="flex flex-wrap items-center gap-2 text-sm text-ink">
-                      <Badge tone={r.action === 'STATUS_CHANGED' ? 'accent' : r.action === 'CORRECTION' ? 'warn' : 'neutral'}>
-                        {ACTION_LABEL[r.action] ?? r.action}
-                      </Badge>
-                      {r.summary}
-                    </p>
-                    {r.reason && <p className="mt-1 border-l-2 border-line-strong pl-2 text-[13px] text-muted">{r.reason}</p>}
-                    {r.user && <p className="mt-1 text-xs text-faint">oleh {r.user.name}</p>}
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </div>
+          <Card className="overflow-hidden">
+            <CardHeader title="Riwayat" description="Riwayat ini tampil publik di halaman kasus (50 entri terakhir)." />
+            {c.revisions.length === 0 ? (
+              <p className="px-5 py-6 text-sm text-muted">Belum ada riwayat.</p>
+            ) : (
+              <ol className="divide-y divide-line">
+                {c.revisions.map((r) => (
+                  <li key={r.id} className="grid grid-cols-1 gap-1.5 px-5 py-3.5 transition-colors hover:bg-ink/[0.03] sm:grid-cols-[160px_minmax(0,1fr)] sm:gap-4">
+                    <div className="font-mono text-xs text-muted num sm:pt-0.5">{fmtDateTime(r.createdAt)}</div>
+                    <div className="min-w-0">
+                      <p className="flex flex-wrap items-center gap-2 text-sm text-ink">
+                        <Badge tone={r.action === 'STATUS_CHANGED' ? 'ink' : r.action === 'CORRECTION' ? 'outline' : 'neutral'}>
+                          {ACTION_LABEL[r.action] ?? r.action}
+                        </Badge>
+                        <span className="min-w-0">{r.summary}</span>
+                      </p>
+                      {r.reason && <p className="tile mt-2 px-3 py-2 text-[13px] text-ink-soft">{r.reason}</p>}
+                      {r.user && <p className="mt-1.5 text-xs text-muted">oleh {r.user.name}</p>}
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </Card>
         )}
       </div>
 

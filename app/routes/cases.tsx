@@ -1,13 +1,13 @@
 import { useEffect, useRef } from 'react';
 import { Form, Link, useNavigation, useSubmit } from 'react-router';
-import { Download, Search, X } from 'lucide-react';
+import { Check, Download, Search, SearchX, X } from 'lucide-react';
 import type { Route } from './+types/cases';
 import { publicGet } from '~/lib/api';
 import { seo } from '~/lib/seo';
 import { STATUS_LABEL, STATUS_ORDER, cx, fmtNum } from '~/lib/format';
 import type { CaseListItem, CaseStatus, Category } from '~/lib/types';
 import { CaseCard } from '~/components/CaseCard';
-import { EmptyState, Pagination, Select } from '~/components/ui';
+import { EmptyState, Input, LinkButton, PageHeader, Pagination, Select, buttonClass } from '~/components/ui';
 
 const SORTS = [
   ['updated', 'Baru diperbarui'],
@@ -69,32 +69,33 @@ export default function Cases({ loaderData }: Route.ComponentProps) {
   const autoSubmit = () => formRef.current && submit(formRef.current, { preventScrollReset: true, replace: true });
 
   return (
-    <div className="container-page pt-10">
-      <header className="flex flex-wrap items-end justify-between gap-4 border-b-2 border-ink pb-5">
-        <div>
-          <p className="kicker">Arsip pemantauan</p>
-          <h1 className="mt-2 font-serif text-headline text-ink">Semua kasus</h1>
-        </div>
-        <a href="/api/cases/export.csv" className="link inline-flex items-center gap-1.5 text-sm" download>
-          <Download className="size-4" /> Unduh CSV
-        </a>
-      </header>
+    <div className="container-page pb-20">
+      <PageHeader
+        kicker="Arsip pemantauan"
+        title="Semua kasus"
+        description="Telusuri kasus hukum publik menurut tahap, kategori, dan pembaruan terakhir."
+        actions={
+          <a href="/api/cases/export.csv" className={buttonClass('outline')} download>
+            <Download /> Unduh CSV
+          </a>
+        }
+      />
 
-      <Form ref={formRef} method="get" className="sticky top-16 z-30 -mx-4 border-b border-line bg-paper/95 px-4 py-4 backdrop-blur sm:mx-0 sm:px-0">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-          <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-faint" />
-            <input
+      <Form ref={formRef} method="get" className="card z-30 p-3 sm:p-4 lg:sticky lg:top-20">
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
+          <div className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden />
+            <Input
               name="q"
               type="search"
               defaultValue={filters.q}
               placeholder="Cari judul, nomor perkara, lembaga, atau nama pihak"
               aria-label="Cari kasus"
-              className="h-10 w-full rounded-[3px] border border-line-strong bg-raised pl-9 pr-3 text-[15px] placeholder:text-faint focus:border-ink focus:outline-none"
+              className="pl-10"
             />
           </div>
           <div className="grid grid-cols-2 gap-2 lg:flex">
-            <Select name="category" defaultValue={filters.category} onChange={autoSubmit} aria-label="Kategori" className="min-w-0 lg:min-w-44">
+            <Select name="category" defaultValue={filters.category} onChange={autoSubmit} aria-label="Kategori" className="min-w-0 lg:w-48">
               <option value="">Semua kategori</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.slug}>
@@ -102,7 +103,7 @@ export default function Cases({ loaderData }: Route.ComponentProps) {
                 </option>
               ))}
             </Select>
-            <Select name="sort" defaultValue={filters.sort} onChange={autoSubmit} aria-label="Urutkan" className="min-w-0 lg:min-w-48">
+            <Select name="sort" defaultValue={filters.sort} onChange={autoSubmit} aria-label="Urutkan" className="min-w-0 lg:w-52">
               {SORTS.map(([k, label]) => (
                 <option key={k} value={k}>
                   {label}
@@ -111,63 +112,73 @@ export default function Cases({ loaderData }: Route.ComponentProps) {
             </Select>
           </div>
         </div>
-        <fieldset className="mt-3 flex flex-wrap items-center gap-1.5">
+        <fieldset className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-line pt-3">
           <legend className="sr-only">Tahap</legend>
+          <span className="mr-1 text-[13px] text-muted" aria-hidden>
+            Tahap
+          </span>
           {STATUS_ORDER.map((s) => {
             const checked = filters.status.includes(s);
             return (
               <label
                 key={s}
                 className={cx(
-                  'cursor-pointer select-none rounded-full border px-3 py-1 text-[13px] transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-focus',
-                  checked ? 'border-ink bg-ink text-paper' : 'border-line-strong text-ink-soft hover:border-ink',
+                  'inline-flex h-8 cursor-pointer select-none items-center rounded-full px-3 text-[13px] font-medium transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus',
+                  checked ? 'bg-ink text-on-ink hover:bg-ink/85' : 'bg-ink/[0.06] text-ink-soft hover:bg-ink/[0.1] hover:text-ink',
                 )}
               >
                 <input type="checkbox" name="status" value={s} defaultChecked={checked} onChange={autoSubmit} className="sr-only" />
+                {checked && <Check className="-ml-0.5 mr-1 size-3.5" aria-hidden />}
                 {STATUS_LABEL[s]}
               </label>
             );
           })}
           {hasFilters && (
-            <Link to="/kasus" className="ml-1 inline-flex items-center gap-1 text-[13px] text-muted hover:text-ink">
-              <X className="size-3.5" /> Hapus filter
+            <Link to="/kasus" className={buttonClass('ghost', 'sm', 'ml-auto text-muted')}>
+              <X /> Hapus filter
             </Link>
           )}
         </fieldset>
       </Form>
 
-      <p className={cx('mt-6 text-sm text-muted transition-opacity', searching && 'opacity-50')} aria-live="polite">
+      <p className={cx('mt-8 text-sm text-muted transition-opacity', searching && 'opacity-50')} aria-live="polite">
         <span className="font-medium text-ink num">{fmtNum(meta.total)}</span> kasus
         {filters.q && (
           <>
             {' '}
-            untuk “<span className="text-ink">{filters.q}</span>”
+            untuk “<span className="text-ink [overflow-wrap:anywhere]">{filters.q}</span>”
           </>
         )}
       </p>
 
-      <div className={cx('mt-6 transition-opacity', searching && 'opacity-50')}>
+      <div className={cx('mt-4 transition-opacity', searching && 'opacity-50')}>
         {cases.length === 0 ? (
           <EmptyState
+            icon={<SearchX />}
             title="Tidak ada kasus yang cocok"
             action={
-              <Link to="/kasus" className="link text-sm">
-                Lihat semua kasus
-              </Link>
+              <div className="flex flex-wrap justify-center gap-2">
+                <LinkButton to="/kasus" variant="outline" size="sm">
+                  Lihat semua kasus
+                </LinkButton>
+                <LinkButton to="/kontribusi/baru" variant="ghost" size="sm">
+                  Kirim kontribusi
+                </LinkButton>
+              </div>
             }
           >
             Coba kata kunci lain atau longgarkan filter. Tahu kasus yang belum kami pantau? Ceritakan lewat formulir kontribusi.
           </EmptyState>
         ) : (
-          <div className="grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5">
             {cases.map((c) => (
-              <CaseCard key={c.id} item={c} />
+              <CaseCard key={c.id} item={c} className="min-w-0" />
             ))}
           </div>
         )}
       </div>
 
-      <div className="mt-12">
+      <div className="mt-10">
         <Pagination page={meta.page} totalPages={meta.totalPages} hrefFor={(p) => qs({ page: p })} />
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
-import { Button, Dialog, Field, Textarea } from '~/components/ui';
+import { ArrowRight } from 'lucide-react';
+import { Breadcrumbs, Button, CardHeader, Dialog, Field, StatBlock, Textarea } from '~/components/ui';
 import { canEdit, cx } from '~/lib/format';
 import { useSession } from '~/lib/session';
 import type { Article, Category, CaseStatus, Defendant, Revision, Source, Stage } from '~/lib/types';
@@ -78,29 +79,36 @@ export const useCanEdit = () => {
 
 /* ---------- Layout pieces ---------- */
 
+/** Title block at the top of every admin page: optional crumbs, caption, title, description, actions. */
 export function AdminPageHeader({
   kicker,
   title,
   description,
   actions,
+  crumbs,
 }: {
   kicker?: ReactNode;
   title: ReactNode;
   description?: ReactNode;
   actions?: ReactNode;
+  crumbs?: { to?: string; label: string }[];
 }) {
   return (
-    <div className="flex flex-col gap-4 border-b border-line pb-5 sm:flex-row sm:items-end sm:justify-between">
-      <div className="min-w-0">
-        {kicker && <p className="kicker">{kicker}</p>}
-        <h1 className="mt-1 font-serif text-[2rem] leading-tight tracking-[-0.015em] text-ink">{title}</h1>
-        {description && <p className="mt-1.5 max-w-2xl text-sm text-muted">{description}</p>}
+    <header>
+      {crumbs && <Breadcrumbs items={crumbs} className="mb-4" />}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          {kicker && <div className="kicker mb-2">{kicker}</div>}
+          <h1 className="text-heading-sm font-semibold text-ink sm:text-heading">{title}</h1>
+          {description && <p className="mt-2 max-w-2xl text-sm text-muted">{description}</p>}
+        </div>
+        {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
       </div>
-      {actions && <div className="flex shrink-0 flex-wrap gap-2">{actions}</div>}
-    </div>
+    </header>
   );
 }
 
+/** Segmented pill tabs. Scrolls horizontally inside itself on narrow screens, never the page. */
 export function Tabs<T extends string>({
   value,
   options,
@@ -115,69 +123,157 @@ export function Tabs<T extends string>({
   label: string;
 }) {
   return (
-    <div role="tablist" aria-label={label} className="-mb-px flex gap-1 overflow-x-auto border-b border-line">
-      {options.map((o) => {
-        const active = o.value === value;
-        const cls = cx(
-          'relative inline-flex shrink-0 items-center gap-2 whitespace-nowrap px-3 py-2.5 text-sm transition-colors',
-          active ? 'text-ink after:absolute after:inset-x-2 after:-bottom-px after:h-[2px] after:bg-ink' : 'text-muted hover:text-ink',
-        );
-        const inner = (
-          <>
-            {o.label}
-            {o.count !== undefined && (
-              <span className={cx('font-mono text-[11px] num', active ? 'text-ink-soft' : 'text-faint')}>{o.count}</span>
-            )}
-          </>
-        );
-        return hrefFor ? (
-          <Link key={o.value} role="tab" aria-selected={active} to={hrefFor(o.value)} className={cls}>
-            {inner}
-          </Link>
-        ) : (
-          <button key={o.value} role="tab" aria-selected={active} onClick={() => onChange?.(o.value)} className={cls}>
-            {inner}
-          </button>
-        );
-      })}
+    <div className="max-w-full overflow-x-auto [scrollbar-width:none]">
+      <div role="tablist" aria-label={label} className="inline-flex gap-1 rounded-full bg-ink/[0.045] p-1">
+        {options.map((o) => {
+          const active = o.value === value;
+          const cls = cx(
+            'inline-flex h-8 shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-3.5 text-[13px] font-medium transition-[background-color,color,box-shadow]',
+            active ? 'bg-raised text-ink shadow-card' : 'text-muted hover:text-ink',
+          );
+          const inner = (
+            <>
+              {o.label}
+              {o.count !== undefined && (
+                <span
+                  className={cx(
+                    'grid h-[18px] min-w-[18px] place-items-center rounded-full px-1.5 text-[11px] num',
+                    active ? 'bg-ink/[0.06] text-ink' : 'text-muted',
+                  )}
+                >
+                  {o.count}
+                </span>
+              )}
+            </>
+          );
+          return hrefFor ? (
+            <Link key={o.value} role="tab" aria-selected={active} to={hrefFor(o.value)} className={cls}>
+              {inner}
+            </Link>
+          ) : (
+            <button key={o.value} type="button" role="tab" aria-selected={active} onClick={() => onChange?.(o.value)} className={cls}>
+              {inner}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
 
+/** Metric card. `warn`/`danger` mark an overdue queue (ember note), never decoration. */
 export function StatTile({
   label,
   value,
   note,
   tone = 'neutral',
   to,
+  icon,
 }: {
   label: string;
   value: ReactNode;
   note?: ReactNode;
   tone?: 'neutral' | 'warn' | 'danger' | 'ok';
   to?: string;
+  icon?: ReactNode;
 }) {
+  const alert = tone === 'warn' || tone === 'danger';
   const body = (
     <>
-      <p className="kicker">{label}</p>
-      <p
-        className={cx(
-          'mt-2 font-serif text-[2.4rem] leading-none num',
-          tone === 'warn' ? 'text-warn' : tone === 'danger' ? 'text-danger' : tone === 'ok' ? 'text-ok' : 'text-ink',
-        )}
-      >
-        {value}
-      </p>
-      {note && <p className="mt-2 text-[12.5px] text-muted">{note}</p>}
+      <dl className="min-w-0">
+        <StatBlock
+          label={
+            <span className="flex items-center justify-between gap-2">
+              {label}
+              {icon && <span className="text-muted [&_svg]:size-4">{icon}</span>}
+            </span>
+          }
+          value={value}
+          hint={
+            note && (
+              <span className={cx('inline-flex items-center gap-1.5', alert && 'font-medium text-ember')}>
+                {alert && <span className="size-1.5 shrink-0 rounded-full bg-ember" aria-hidden />}
+                {note}
+              </span>
+            )
+          }
+        />
+      </dl>
+      {to && (
+        <span className="mt-4 inline-flex items-center gap-1 text-[13px] font-medium text-muted transition-colors group-hover:text-ink">
+          Buka <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden />
+        </span>
+      )}
     </>
   );
-  const cls = 'block border-t-2 border-ink bg-raised px-4 pb-4 pt-3';
+  const cls = 'card flex flex-col justify-between p-5';
   return to ? (
-    <Link to={to} className={cx(cls, 'transition-colors hover:bg-sunk')}>
+    <Link to={to} className={cx(cls, 'card-hover group')}>
       {body}
     </Link>
   ) : (
     <div className={cls}>{body}</div>
+  );
+}
+
+/** Card that groups related form fields. Rendered as a fieldset so `disabled` locks every control. */
+export function FormCard({
+  title,
+  description,
+  disabled,
+  action,
+  children,
+  bodyClassName,
+}: {
+  title: ReactNode;
+  description?: ReactNode;
+  disabled?: boolean;
+  action?: ReactNode;
+  children: ReactNode;
+  bodyClassName?: string;
+}) {
+  return (
+    <fieldset disabled={disabled} className="card min-w-0 overflow-hidden">
+      <legend className="sr-only">{title}</legend>
+      <CardHeader title={title} description={description} action={action} />
+      <div className={cx('p-5', bodyClassName)}>{children}</div>
+    </fieldset>
+  );
+}
+
+/** Card container for a data table. The table scrolls horizontally inside the card, never the page. */
+export function TableCard({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <div className={cx('card overflow-hidden', className)}>
+      <div className="overflow-x-auto">{children}</div>
+    </div>
+  );
+}
+
+/** Table header cell / row classes shared by every admin table. */
+export const thClass = 'kicker whitespace-nowrap px-4 py-2.5 text-left first:pl-5 last:pr-5';
+export const theadClass = 'border-b border-line bg-alt';
+export const rowClass = 'transition-colors hover:bg-ink/[0.03]';
+export const tdClass = 'px-4 py-3.5 align-middle first:pl-5 last:pr-5';
+
+/** Button row at the bottom of a dialog form. Stacks (primary on top) on phones. */
+export const dialogFooterClass = 'flex flex-col-reverse gap-2 border-t border-line pt-4 sm:flex-row sm:justify-end';
+
+/** Small round avatar with initials (no images in the admin). */
+export function Initials({ name, className }: { name: string; className?: string }) {
+  const letters = name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase())
+    .join('');
+  return (
+    <span
+      aria-hidden
+      className={cx('grid size-8 shrink-0 place-items-center rounded-full bg-ink/[0.06] text-xs font-medium text-ink-soft', className)}
+    >
+      {letters || '?'}
+    </span>
   );
 }
 
@@ -227,7 +323,7 @@ export function ConfirmDialog({
             <Textarea id="confirm-reason" rows={3} value={reason} onChange={(e) => setReason(e.target.value)} />
           </Field>
         )}
-        <div className="flex justify-end gap-2">
+        <div className={cx('flex flex-col-reverse gap-2 sm:flex-row sm:justify-end', withReason && 'border-t border-line pt-4')}>
           <Button variant="ghost" onClick={onClose}>
             Batal
           </Button>

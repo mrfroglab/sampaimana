@@ -1,5 +1,5 @@
 import { RelTime } from './ui';
-import { fmtDateTime } from '~/lib/format';
+import { cx, fmtDateTime } from '~/lib/format';
 import type { Revision } from '~/lib/types';
 
 export const ACTION_LABEL: Record<string, string> = {
@@ -22,43 +22,47 @@ export const ACTION_LABEL: Record<string, string> = {
 export function RevisionList({ revisions }: { revisions: Revision[] }) {
   if (revisions.length === 0) return <p className="text-sm text-muted">Belum ada perubahan tercatat.</p>;
   return (
-    <ol className="relative">
+    <ol>
       {revisions.map((r) => {
         const isCorrection = r.action === 'CORRECTION';
         const isStatus = r.action === 'STATUS_CHANGED';
         return (
-          <li key={r.id} className="grid grid-cols-[96px_1fr] gap-4 border-t border-line py-3.5 first:border-t-0 sm:grid-cols-[132px_1fr]">
-            <div className="text-[11px] leading-tight text-muted">
-              <RelTime date={r.createdAt} className="block font-mono" />
-              <span className="mt-1 block text-faint">{fmtDateTime(r.createdAt)}</span>
+          <li key={r.id} className="group grid grid-cols-[8px_minmax(0,1fr)] gap-x-3.5 pb-5 last:pb-0">
+            <div className="relative flex justify-center" aria-hidden>
+              <span
+                className={cx(
+                  'relative z-10 mt-[6px] size-2 rounded-full',
+                  isCorrection ? 'bg-ember' : isStatus ? 'bg-ink' : 'bg-line-strong',
+                )}
+              />
+              <span className="absolute -bottom-1 top-[20px] w-px bg-line group-last:hidden" />
             </div>
             <div className="min-w-0">
-              <p className="flex flex-wrap items-center gap-2">
-                <span
-                  className={
-                    isCorrection
-                      ? 'font-mono text-[10.5px] uppercase tracking-[0.08em] text-warn'
-                      : isStatus
-                        ? 'font-mono text-[10.5px] uppercase tracking-[0.08em] text-accent-ink'
-                        : 'font-mono text-[10.5px] uppercase tracking-[0.08em] text-muted'
-                  }
-                >
+              <p className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[13px] text-muted">
+                <span className={cx('font-medium', isCorrection ? 'text-ember' : 'text-ink')}>
                   {ACTION_LABEL[r.action] ?? r.action}
                 </span>
-                {r.user?.name && <span className="text-[11px] text-faint">oleh {r.user.name}</span>}
+                <span aria-hidden className="text-faint">
+                  ·
+                </span>
+                <RelTime date={r.createdAt} />
+                <span className="max-sm:hidden">({fmtDateTime(r.createdAt)})</span>
+                {r.user?.name && (
+                  <>
+                    <span aria-hidden className="text-faint">
+                      ·
+                    </span>
+                    <span className="min-w-0 truncate">oleh {r.user.name}</span>
+                  </>
+                )}
               </p>
-              <p className="mt-1 text-[14.5px] leading-snug text-ink">{r.summary}</p>
-              {r.reason && (
-                <p
-                  className={
-                    isCorrection
-                      ? 'mt-2 border-l-2 border-warn bg-warn-wash/60 px-3 py-2 text-sm text-ink-soft'
-                      : 'mt-1.5 text-sm italic text-ink-soft'
-                  }
-                >
-                  {isCorrection ? r.reason : `Alasan: ${r.reason}`}
-                </p>
-              )}
+              <p className="mt-1 text-sm leading-relaxed text-ink [overflow-wrap:anywhere]">{r.summary}</p>
+              {r.reason &&
+                (isCorrection ? (
+                  <p className="mt-2 rounded-lg bg-ember-wash px-3 py-2 text-[13px] leading-relaxed text-ink-soft">{r.reason}</p>
+                ) : (
+                  <p className="mt-1 text-[13px] leading-relaxed text-muted">Alasan: {r.reason}</p>
+                ))}
             </div>
           </li>
         );

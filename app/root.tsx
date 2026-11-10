@@ -21,7 +21,7 @@ export const links: Route.LinksFunction = () => [
   { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossOrigin: 'anonymous' },
   {
     rel: 'stylesheet',
-    href: 'https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap',
+    href: 'https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap',
   },
   { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },
   { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
@@ -37,8 +37,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-        <meta name="theme-color" content="#f5f2ea" media="(prefers-color-scheme: light)" />
-        <meta name="theme-color" content="#13120f" media="(prefers-color-scheme: dark)" />
+        <meta name="theme-color" content="#f5f5f5" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)" />
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <Meta />
         <Links />
@@ -58,7 +58,7 @@ function NavigationBar() {
   return (
     <div
       aria-hidden
-      className={`fixed inset-x-0 top-0 z-50 h-[2px] origin-left bg-accent transition-transform duration-500 ${busy ? 'scale-x-75' : 'scale-x-0 opacity-0'}`}
+      className={`fixed inset-x-0 top-0 z-50 h-[2px] origin-left bg-ink transition-transform duration-500 ${busy ? 'scale-x-75' : 'scale-x-0 opacity-0'}`}
     />
   );
 }
@@ -70,7 +70,7 @@ export default function App() {
   return (
     <ToastProvider>
       <NavigationBar />
-      <a href="#konten" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:bg-ink focus:px-3 focus:py-2 focus:text-paper">
+      <a href="#konten" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:rounded-full focus:bg-ink focus:px-4 focus:py-2 focus:text-on-ink">
         Lewati ke konten
       </a>
       <Header />
@@ -100,17 +100,21 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   return (
     <>
       <Header />
-      <main id="konten" className="container-page py-24">
-        <p className="kicker">Galat {status}</p>
-        <h1 className="mt-3 max-w-2xl font-serif text-headline text-ink">{title}</h1>
-        <p className="mt-4 max-w-xl text-lg text-muted">{message}</p>
-        <div className="mt-8 flex gap-3">
-          <Link to="/" className={buttonClass('primary')}>
-            Ke beranda
-          </Link>
-          <Link to="/kasus" className={buttonClass('outline')}>
-            Telusuri kasus
-          </Link>
+      <main id="konten" className="container-page grid min-h-[60dvh] place-items-center py-20">
+        <div className="flex max-w-lg flex-col items-center text-center">
+          <span className="rounded-full border border-line bg-raised px-3 py-1 font-mono text-xs text-muted shadow-card">
+            Galat {status}
+          </span>
+          <h1 className="mt-5 text-heading font-semibold text-ink sm:text-heading-lg">{title}</h1>
+          <p className="mt-3 text-body-lg text-muted">{message}</p>
+          <div className="mt-8 flex flex-wrap justify-center gap-2">
+            <Link to="/" className={buttonClass('primary')}>
+              Ke beranda
+            </Link>
+            <Link to="/kasus" className={buttonClass('outline')}>
+              Telusuri kasus
+            </Link>
+          </div>
         </div>
       </main>
       <Footer />
