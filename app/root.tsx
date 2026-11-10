@@ -7,33 +7,42 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLocation,
   useNavigation,
 } from 'react-router';
 import type { Route } from './+types/root';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { ToastProvider, buttonClass } from './components/ui';
+import { EmbedError } from './components/embed';
 import { ensureSession } from './lib/session';
+import { cx } from './lib/format';
+// Fonts are self-hosted (no request to Google): fewer third parties, and embeds stay cookie- and tracker-free.
+import '@fontsource/geist/400.css';
+import '@fontsource/geist/500.css';
+import '@fontsource/geist/600.css';
+import '@fontsource/geist-mono/400.css';
+import '@fontsource/geist-mono/500.css';
 import './app.css';
 
 export const links: Route.LinksFunction = () => [
-  { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-  { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossOrigin: 'anonymous' },
-  {
-    rel: 'stylesheet',
-    href: 'https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap',
-  },
   { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },
   { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
   { rel: 'manifest', href: '/manifest.webmanifest' },
 ];
 
 // Applied before paint so the page never flashes the wrong theme.
-const themeScript = `(function(){try{var t=localStorage.getItem('sm-theme');if(!t){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}document.documentElement.dataset.theme=t}catch(e){document.documentElement.dataset.theme='light'}})()`;
+// On /embed/* a valid ?theme=light|dark wins (never persisted); auto/missing follows the
+// system and ignores the site preference, because the widget lives on someone else's page.
+const themeScript = `(function(){var d=document.documentElement;try{var sys=function(){return matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'};var t=null;if(location.pathname.indexOf('/embed/')===0){var q=new URLSearchParams(location.search).get('theme');t=q==='light'||q==='dark'?q:sys()}else{t=localStorage.getItem('sm-theme')||sys()}d.dataset.theme=t}catch(e){d.dataset.theme='light'}})()`;
+
+/** The embeddable widget (/embed/*) renders bare: no header, footer or session. */
+const useIsEmbed = () => useLocation().pathname.startsWith('/embed/');
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  const embed = useIsEmbed();
   return (
-    <html lang="id" data-theme="light" suppressHydrationWarning>
+    <html lang="id" data-theme="light" data-embed={embed ? '' : undefined} className={cx(embed && 'bg-transparent')} suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -43,7 +52,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Meta />
         <Links />
       </head>
-      <body>
+      <body className={cx(embed && 'min-h-0 overflow-x-hidden bg-transparent')}>
         {children}
         <ScrollRestoration />
         <Scripts />
@@ -64,9 +73,12 @@ function NavigationBar() {
 }
 
 export default function App() {
+  const embed = useIsEmbed();
   useEffect(() => {
-    void ensureSession();
-  }, []);
+    // Anonymous embeds never touch the auth/refresh endpoint.
+    if (!embed) void ensureSession();
+  }, [embed]);
+  if (embed) return <Outlet />;
   return (
     <ToastProvider>
       <NavigationBar />
@@ -83,6 +95,7 @@ export default function App() {
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  const embed = useIsEmbed();
   let status = 500;
   let title = 'Ada yang tidak beres';
   let message = 'Terjadi kesalahan saat memuat halaman. Coba muat ulang beberapa saat lagi.';
@@ -97,6 +110,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   } else if (error instanceof Error && import.meta.env.DEV) {
     message = error.message;
   }
+  if (embed) return <EmbedError status={status} />;
   return (
     <>
       <Header />

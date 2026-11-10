@@ -78,7 +78,7 @@ export function StatusRail({
       </div>
 
       {/* labels */}
-      <div className={cx('relative', lg ? 'mt-3 h-10' : 'mt-2 h-4')}>
+      <div className={cx('relative', lg ? 'mt-3 h-10 max-sm:h-5' : 'mt-2 h-4')}>
         {STATUS_ORDER.map((s, i) => {
           const isCurrent = i === currentIndex;
           const isPast = i < currentIndex;
