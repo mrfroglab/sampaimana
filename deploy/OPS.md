@@ -31,6 +31,12 @@ Butuh `loginctl enable-linger $USER` agar timer user tetap jalan tanpa sesi logi
 
 ### Salinan di luar server (wajib untuk benar-benar aman)
 
+> **TODO (belum disiapkan, per 2026-11-10):** tempat penyimpanan salinan luar server belum ada. Token `gdrive:` di rclone
+> sudah kedaluwarsa dan `BACKUP_REMOTE` masih kosong, jadi backup saat ini hanya tersimpan di mesin yang sama.
+> Siapkan tujuannya (saran: bucket Cloudflare R2 + remote rclone `crypt`), isi `BACKUP_REMOTE`, lalu hapus catatan ini.
+> Sampai itu selesai, data hilang bersama mesin kalau disk rusak.
+
+
 Backup yang hanya ada di mesin yang sama tidak melindungi dari disk rusak atau mesin hilang.
 Isi `BACKUP_REMOTE` di `/opt/stacks/apps/sampaimana/backup.env` dengan remote rclone.
 
