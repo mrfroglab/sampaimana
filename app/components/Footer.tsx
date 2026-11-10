@@ -7,6 +7,7 @@ const COLS = [
     title: 'Telusuri',
     links: [
       { to: '/kasus', label: 'Semua kasus' },
+      { to: '/instansi', label: 'Lembaga' },
       { to: '/statistik', label: 'Statistik' },
       { to: '/data', label: 'Data terbuka & API' },
       { to: '/kontribusi/baru', label: 'Kirim kontribusi' },

@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import type { Route } from './+types/case';
 import { ApiError, publicGet, publicPost } from '~/lib/api';
-import { seo } from '~/lib/seo';
+import { SITE_URL, seo } from '~/lib/seo';
 import {
   SOURCE_TYPE_LABEL,
   STAGE_STATUS_LABEL,
@@ -30,6 +30,7 @@ import {
   fmtDuration,
   fmtShort,
   hostOf,
+  slugify,
 } from '~/lib/format';
 import type { CaseDetail, Source, Stage } from '~/lib/types';
 import { api, useSession } from '~/lib/session';
@@ -62,6 +63,45 @@ export async function loader({ params }: Route.LoaderArgs) {
   }
 }
 
+function caseJsonLd(c: CaseDetail): Record<string, unknown>[] {
+  const url = `${SITE_URL}/kasus/${c.slug}`;
+  const firstStage = [...c.stages].sort((a, b) => +new Date(a.startedAt) - +new Date(b.startedAt))[0];
+  const citations = [...c.sources, ...c.stages.flatMap((s) => s.sources)]
+    .filter((s) => s.isVerified)
+    .map((s) => ({ '@type': 'CreativeWork', name: s.title, url: s.url }));
+  return [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Article',
+      headline: c.title,
+      description: c.summary || c.description.slice(0, 200),
+      datePublished: c.createdAt || firstStage?.startedAt,
+      dateModified: c.lastActivityAt,
+      url,
+      mainEntityOfPage: url,
+      inLanguage: 'id-ID',
+      about: c.category.name,
+      image: `${SITE_URL}/kasus/${c.slug}/og.png`,
+      publisher: {
+        '@type': 'Organization',
+        name: 'Sampai Mana',
+        url: SITE_URL,
+        logo: { '@type': 'ImageObject', url: `${SITE_URL}/icon-512.png` },
+      },
+      ...(citations.length > 0 && { citation: citations }),
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Beranda', item: SITE_URL },
+        { '@type': 'ListItem', position: 2, name: 'Kasus', item: `${SITE_URL}/kasus` },
+        { '@type': 'ListItem', position: 3, name: c.title, item: url },
+      ],
+    },
+  ];
+}
+
 export const meta: Route.MetaFunction = ({ data: d }) => {
   if (!d) return seo({ title: 'Kasus tidak ditemukan', noindex: true });
   const c = d.item;
@@ -70,6 +110,8 @@ export const meta: Route.MetaFunction = ({ data: d }) => {
     description: `${STATUS_LABEL[c.currentStatus]} · ${c.summary || c.description.slice(0, 150)}`,
     path: `/kasus/${c.slug}`,
     type: 'article',
+    image: `/kasus/${c.slug}/og.png`,
+    jsonLd: caseJsonLd(c),
   });
 };
 
@@ -542,7 +584,15 @@ export default function CasePage({ loaderData }: Route.ComponentProps) {
               <ul className="divide-y divide-line">
                 {item.defendants.map((d) => (
                   <li key={d.id ?? d.name} className="px-5 py-3.5">
-                    <p className="text-[15px] font-medium text-ink">{d.name}</p>
+                    <p className="text-[15px] font-medium text-ink">
+                      {d.slug ? (
+                        <Link to={`/orang/${d.slug}`} className="hover:underline">
+                          {d.name}
+                        </Link>
+                      ) : (
+                        d.name
+                      )}
+                    </p>
                     <p className="mt-0.5 text-[13px] text-muted">{d.role}</p>
                     {d.description && <p className="mt-1.5 text-[13px] leading-relaxed text-ink-soft">{d.description}</p>}
                   </li>
@@ -562,7 +612,15 @@ export default function CasePage({ loaderData }: Route.ComponentProps) {
               {facts.map(([k, v, mono]) => (
                 <div key={k} className="px-5 py-3">
                   <dt className="text-[13px] text-muted">{k}</dt>
-                  <dd className={cx('mt-0.5 text-sm text-ink', mono && 'break-all font-mono text-[13px]')}>{v}</dd>
+                  <dd className={cx('mt-0.5 text-sm text-ink', mono && 'break-all font-mono text-[13px]')}>
+                    {k === 'Lembaga penangan' && item.institution && slugify(item.institution) ? (
+                      <Link to={`/instansi/${slugify(item.institution)}`} className="hover:underline">
+                        {v}
+                      </Link>
+                    ) : (
+                      v
+                    )}
+                  </dd>
                 </div>
               ))}
             </dl>

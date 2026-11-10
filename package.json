@@ -12,16 +12,21 @@
     "build": "react-router build",
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
-    "lint": "oxlint app"
+    "lint": "oxlint app",
+    "brand": "node scripts/generate-brand-assets.mjs"
   },
   "dependencies": {
+    "@fontsource/geist": "^5.3.0",
+    "@fontsource/geist-mono": "^5.3.0",
     "@react-router/node": "7.18.5",
     "@react-router/serve": "7.18.5",
+    "@resvg/resvg-js": "^2.6.2",
     "isbot": "^5.1.31",
     "lucide-react": "^0.548.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "react-router": "7.18.5"
+    "react-router": "7.18.5",
+    "satori": "^0.63.2"
   },
   "devDependencies": {
     "@react-router/dev": "7.18.5",
