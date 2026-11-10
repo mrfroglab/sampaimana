@@ -31,7 +31,7 @@ export async function loader() {
 
   const enc = (slug: string) => encodeURIComponent(slug);
   const urls: { loc: string; lastmod?: string }[] = [
-    ...['/', '/kasus', '/statistik', '/data', '/tanam', '/tentang', '/instansi'].map((p) => ({ loc: p })),
+    ...['/', '/kasus', '/statistik', '/tren', '/data', '/tanam', '/tentang', '/instansi'].map((p) => ({ loc: p })),
     ...(src.cases ?? []).map((c) => ({ loc: `/kasus/${enc(c.slug)}`, lastmod: lastmod(c.updatedAt) })),
     ...(src.people ?? []).map((p) => ({ loc: `/orang/${enc(p.slug)}` })),
     ...(src.institutions ?? []).map((i) => ({ loc: `/instansi/${enc(i.slug)}` })),

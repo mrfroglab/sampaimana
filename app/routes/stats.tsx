@@ -6,7 +6,7 @@ import { publicGet } from '~/lib/api';
 import { seo } from '~/lib/seo';
 import { STATUS_LABEL, STATUS_ORDER, fmtDuration, fmtNum } from '~/lib/format';
 import type { Stats } from '~/lib/types';
-import { Card, CardHeader, EmptyState, PageHeader, StatBlock } from '~/components/ui';
+import { Card, CardHeader, EmptyState, LinkButton, PageHeader, StatBlock } from '~/components/ui';
 
 export const meta: Route.MetaFunction = () =>
   seo({ title: 'Statistik', description: 'Berapa lama kasus hukum bertahan di tiap tahap, dan di mana saja kasus tertahan.', path: '/statistik' });
@@ -50,6 +50,11 @@ export default function StatsPage({ loaderData }: Route.ComponentProps) {
         kicker="Angka di balik linimasa"
         title="Statistik"
         description="Seberapa lama sebuah kasus bertahan di setiap tahap, dan berapa banyak yang belum sampai di putusan. Dihitung dari tahapan yang sudah selesai pada kasus aktif."
+        actions={
+          <LinkButton to="/tren" variant="outline">
+            Tren durasi per instansi
+          </LinkButton>
+        }
       />
 
       <dl className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
