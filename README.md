@@ -29,9 +29,10 @@ menggunakan cookie `httpOnly` dari API (satu domain, jadi tanpa CORS). Tidak ada
 
 ## Desain
 
-Gaya editorial: kertas hangat, tinta, satu aksen bata dari logo. Tipografi Newsreader (judul), IBM Plex Sans (UI),
-IBM Plex Mono (nomor perkara & tanggal). Elemen khas: **rel status** lima stasiun seperti peta transit.
-Mendukung tema gelap, `prefers-reduced-motion`, dan navigasi keyboard.
+Sistem monokrom ala shadcn: kanvas abu lembut, kartu putih berradius 24px dengan garis hairline, tombol/input/badge
+berbentuk pil, tipografi Geist. Satu-satunya warna adalah merah *ember* untuk titik "tahap saat ini", tenggat lewat,
+dan keadaan error/destruktif. Aturan lengkap dan komponen ada di [`DESIGN.md`](DESIGN.md). Rel status lima stasiun
+adalah elemen khasnya. Mendukung tema gelap, `prefers-reduced-motion`, palet pencarian `Ctrl/⌘ K`, dan navigasi keyboard.
 
 ## Pengembangan
 
@@ -59,3 +60,7 @@ ADMIN_EMAIL=email@anda.com SEED_DEMO=true ./deploy/deploy.sh
 Skrip ini membangun image API & web, menyiapkan `/opt/stacks/apps/sampaimana` (Postgres, API, web) dengan rahasia
 yang dibuat sekali di `.env` (izin 600), lalu memasang blok Caddy untuk `sampaimana.hallojanu.me`. Aman dijalankan
 ulang untuk update; migrasi database berjalan otomatis saat API start.
+
+## Operasional
+
+Backup harian, salinan di luar server, notifikasi kegagalan, dan cara restore: lihat [`deploy/OPS.md`](deploy/OPS.md).
