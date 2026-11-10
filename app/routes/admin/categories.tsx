@@ -72,7 +72,7 @@ function CategoryDialog({ category, onClose, onDone }: { category: Category | nu
               type="color"
               value={color}
               onChange={(e) => setColor(e.target.value)}
-              className="h-10 w-14 cursor-pointer rounded-full border border-line bg-raised p-1 [&::-moz-color-swatch]:rounded-full [&::-moz-color-swatch]:border-0 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-0"
+              className="h-11 w-14 cursor-pointer rounded-xl border border-line bg-raised p-1 [&::-moz-color-swatch]:rounded-lg [&::-moz-color-swatch]:border-0 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-0"
             />
             <Input value={color} onChange={(e) => setColor(e.target.value)} className="w-28 font-mono text-sm" aria-label="Kode warna hex" />
           </div>

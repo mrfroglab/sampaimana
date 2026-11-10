@@ -226,7 +226,7 @@ function ArticleDialog({
         <div>
           <div className="flex items-center justify-between">
             <span className="text-[13px] font-medium text-ink">Isi</span>
-            <div className="inline-flex gap-1 rounded-full bg-ink/[0.045] p-0.5 lg:hidden" role="tablist" aria-label="Mode editor">
+            <div className="inline-flex gap-1 rounded-xl bg-ink/[0.05] p-1 lg:hidden" role="tablist" aria-label="Mode editor">
               {(['write', 'preview'] as const).map((t) => (
                 <button
                   key={t}
@@ -235,7 +235,7 @@ function ArticleDialog({
                   aria-selected={tab === t}
                   onClick={() => setTab(t)}
                   className={cx(
-                    'h-7 rounded-full px-3 text-xs font-medium transition-[background-color,color,box-shadow]',
+                    'h-7 rounded-lg px-3 text-xs font-medium transition-[background-color,color,box-shadow]',
                     tab === t ? 'bg-raised text-ink shadow-card' : 'text-muted hover:text-ink',
                   )}
                 >
@@ -378,20 +378,20 @@ export function StageEditor({
                     {fmtDate(s.startedAt)} → {s.endedAt ? fmtDate(s.endedAt) : 'sekarang'}
                     {' · '}
                     {fmtDuration(daysBetween(s.startedAt, s.endedAt ?? new Date()))}
-                    {s.dueAt && <span className={cx(overdue && 'text-ember')}>{` · tenggat ${fmtDate(s.dueAt)}`}</span>}
+                    {s.dueAt && <span className={cx(overdue && 'text-ember-ink')}>{` · tenggat ${fmtDate(s.dueAt)}`}</span>}
                   </p>
                   {s.summary && <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">{s.summary}</p>}
                   <div className="mt-2.5 flex flex-wrap gap-1.5">
                     <span
                       className={cx(
-                        'inline-flex h-[22px] min-w-0 max-w-full items-center gap-1 rounded-full px-2 text-xs font-medium',
+                        'inline-flex h-6 min-w-0 max-w-full items-center gap-1 rounded-lg px-2 text-xs font-medium',
                         s.article ? 'bg-ink/[0.06] text-ink' : 'border border-dashed border-line-strong text-muted',
                       )}
                     >
                       <FileText className="size-3 shrink-0" aria-hidden />
                       <span className="truncate">{s.article ? `Artikel: ${s.article.title}` : 'Belum ada artikel'}</span>
                     </span>
-                    <span className="inline-flex h-[22px] items-center gap-1 rounded-full bg-ink/[0.06] px-2 text-xs font-medium text-ink-soft">
+                    <span className="inline-flex h-6 items-center gap-1 rounded-lg border border-line px-2 text-xs font-medium text-ink-soft">
                       <Link2 className="size-3" aria-hidden /> <span className="num">{s.sources.length}</span> sumber
                     </span>
                   </div>

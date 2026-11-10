@@ -97,7 +97,7 @@ function Segmented<T extends string>({
   onChange: (v: T) => void;
 }) {
   return (
-    <div role="radiogroup" aria-label={label} className="inline-flex max-w-full gap-1 rounded-full bg-ink/[0.045] p-1">
+    <div role="radiogroup" aria-label={label} className="inline-flex max-w-full gap-1 rounded-xl bg-ink/[0.05] p-1">
       {options.map(([v, text]) => {
         const active = v === value;
         return (
@@ -108,7 +108,7 @@ function Segmented<T extends string>({
             aria-checked={active}
             onClick={() => onChange(v)}
             className={cx(
-              'inline-flex h-8 shrink-0 items-center whitespace-nowrap rounded-full px-3.5 text-[13px] font-medium transition-[background-color,color,box-shadow]',
+              'inline-flex h-8 shrink-0 items-center whitespace-nowrap rounded-lg px-3.5 text-[13px] font-medium transition-[background-color,color,box-shadow]',
               active ? 'bg-raised text-ink shadow-card' : 'text-muted hover:text-ink',
             )}
           >
@@ -257,9 +257,9 @@ function CasePicker({
 }
 
 const PREVIEW_BG: Record<Theme, string> = {
-  light: 'bg-[#f5f5f5]',
-  dark: 'bg-[#0a0a0a]',
-  auto: 'bg-[#f5f5f5] dark:bg-[#0a0a0a]',
+  light: 'bg-[#f4f4f5]',
+  dark: 'bg-[#09090b]',
+  auto: 'bg-[#f4f4f5] dark:bg-[#09090b]',
 };
 
 function Preview({ slug, theme }: { slug: string; theme: Theme }) {
@@ -361,7 +361,7 @@ export default function EmbedDocsPage({ loaderData }: Route.ComponentProps) {
                     type="button"
                     onClick={() => choose(null)}
                     aria-label="Hapus pilihan kasus"
-                    className="grid size-6 shrink-0 place-items-center rounded-full text-muted transition-colors hover:bg-ink/[0.06] hover:text-ink"
+                    className="grid size-6 shrink-0 place-items-center rounded-md text-muted transition-colors hover:bg-ink/[0.06] hover:text-ink"
                   >
                     <X className="size-3.5" />
                   </button>
@@ -391,7 +391,7 @@ export default function EmbedDocsPage({ loaderData }: Route.ComponentProps) {
                 <Preview slug={selected.slug} theme={theme} />
               </div>
             ) : (
-              <p className="max-w-xs text-center text-sm text-[#737373]">Pilih kasus di sebelah kiri untuk melihat pratinjau widget.</p>
+              <p className="max-w-xs text-center text-sm text-[#71717a]">Pilih kasus di sebelah kiri untuk melihat pratinjau widget.</p>
             )}
           </div>
         </Card>

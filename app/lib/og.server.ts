@@ -15,14 +15,14 @@ export const OG_W = 1200;
 export const OG_H = 630;
 
 export const C = {
-  canvas: '#f5f5f5',
+  canvas: '#f4f4f5',
   card: '#ffffff',
-  ink: '#0a0a0a',
-  muted: '#737373',
-  faint: '#a3a3a3',
-  line: '#e5e5e5',
-  lineStrong: '#d4d4d4',
-  ember: '#e7000b',
+  ink: '#09090b',
+  muted: '#52525b',
+  faint: '#a1a1aa',
+  line: '#ececee',
+  lineStrong: '#d4d4d8',
+  ember: '#ff5a00',
   onInk: '#fafafa',
 } as const;
 
@@ -41,7 +41,7 @@ const flex = (style: Style): Style => ({ display: 'flex', ...style });
 
 /* ---------- fonts (loaded once, lazily) ---------- */
 
-type FontDef = { name: string; data: Buffer; weight: 400 | 500 | 600; style: 'normal' };
+type FontDef = { name: string; data: Buffer; weight: 400 | 500 | 600 | 700; style: 'normal' };
 let fontsCache: FontDef[] | null = null;
 
 export function ogFonts(): FontDef[] {
@@ -49,20 +49,21 @@ export function ogFonts(): FontDef[] {
   const req = createRequire(import.meta.url);
   const load = (pkg: string, file: string) => readFileSync(req.resolve(`${pkg}/files/${file}`));
   const fonts: FontDef[] = [
-    { name: 'Geist', data: load('@fontsource/geist', 'geist-latin-400-normal.woff'), weight: 400, style: 'normal' },
-    { name: 'Geist', data: load('@fontsource/geist', 'geist-latin-500-normal.woff'), weight: 500, style: 'normal' },
-    { name: 'Geist', data: load('@fontsource/geist', 'geist-latin-600-normal.woff'), weight: 600, style: 'normal' },
+    { name: 'DM Sans', data: load('@fontsource/dm-sans', 'dm-sans-latin-400-normal.woff'), weight: 400, style: 'normal' },
+    { name: 'DM Sans', data: load('@fontsource/dm-sans', 'dm-sans-latin-500-normal.woff'), weight: 500, style: 'normal' },
+    { name: 'DM Sans', data: load('@fontsource/dm-sans', 'dm-sans-latin-600-normal.woff'), weight: 600, style: 'normal' },
+    { name: 'DM Sans', data: load('@fontsource/dm-sans', 'dm-sans-latin-700-normal.woff'), weight: 700, style: 'normal' },
   ];
   try {
-    fonts.push({ name: 'Geist Mono', data: load('@fontsource/geist-mono', 'geist-mono-latin-400-normal.woff'), weight: 400, style: 'normal' });
+    fonts.push({ name: 'DM Mono', data: load('@fontsource/dm-mono', 'dm-mono-latin-400-normal.woff'), weight: 400, style: 'normal' });
   } catch {
-    // Geist Mono is optional; text falls back to Geist.
+    // DM Mono is optional; text falls back to DM Sans.
   }
   fontsCache = fonts;
   return fonts;
 }
 
-export const MONO = "'Geist Mono', Geist";
+export const MONO = "'DM Mono', 'DM Sans'";
 
 /** satori element tree -> PNG bytes. */
 export async function renderPng(node: ReactNode, width = OG_W, height = OG_H): Promise<Buffer> {
@@ -90,7 +91,7 @@ const Q_PATH =
 /** The logo mark: ink rounded square, paper "?", ember dot. Same geometry as components/Logo.tsx. */
 export function logoMark(size: number, opts: { bg?: boolean } = {}): ReactNode {
   return h('svg', { display: 'flex' }, [
-    ...(opts.bg === false ? [] : [h('rect', {}, undefined, { width: 32, height: 32, rx: 9, fill: C.ink })]),
+    ...(opts.bg === false ? [] : [h('rect', {}, undefined, { width: 32, height: 32, rx: 10, fill: C.ink })]),
     h('path', {}, undefined, { d: Q_PATH, fill: C.onInk }),
     h('circle', {}, undefined, { cx: 15.6, cy: 23.2, r: 1.8, fill: C.ember }),
   ], { width: size, height: size, viewBox: '0 0 32 32', xmlns: 'http://www.w3.org/2000/svg' });
@@ -99,13 +100,13 @@ export function logoMark(size: number, opts: { bg?: boolean } = {}): ReactNode {
 export function wordmark(): ReactNode {
   return h('div', flex({ alignItems: 'center' }), [
     logoMark(44),
-    h('div', { display: 'flex', marginLeft: 14, fontSize: 28, fontWeight: 600, letterSpacing: '-0.03em', color: C.ink }, 'Sampai Mana'),
+    h('div', { display: 'flex', marginLeft: 14, fontSize: 28, fontWeight: 600, color: C.ink }, 'Sampai Mana'),
   ]);
 }
 
 /** Canvas + inset white card with hairline border. `children` fill the card (column). */
 export function cardShell(children: Child[]): ReactNode {
-  return h('div', flex({ width: OG_W, height: OG_H, boxSizing: 'border-box', background: C.canvas, padding: 48, fontFamily: 'Geist', color: C.ink }), [
+  return h('div', flex({ width: OG_W, height: OG_H, boxSizing: 'border-box', background: C.canvas, padding: 48, fontFamily: 'DM Sans', color: C.ink }), [
     h(
       'div',
       flex({
@@ -115,7 +116,7 @@ export function cardShell(children: Child[]): ReactNode {
         background: C.card,
         border: `1px solid ${C.line}`,
         boxSizing: 'border-box',
-        borderRadius: 28,
+        borderRadius: 36,
         padding: '40px 52px 40px 52px',
       }),
       children,

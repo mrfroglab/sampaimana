@@ -40,7 +40,7 @@ export function RevisionList({ revisions }: { revisions: Revision[] }) {
             </div>
             <div className="min-w-0">
               <p className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[13px] text-muted">
-                <span className={cx('font-medium', isCorrection ? 'text-ember' : 'text-ink')}>
+                <span className={cx('font-medium', isCorrection ? 'text-ember-ink' : 'text-ink')}>
                   {ACTION_LABEL[r.action] ?? r.action}
                 </span>
                 <span aria-hidden className="text-faint">

@@ -136,7 +136,7 @@ function SectionCard({
     <section aria-labelledby={id} className={cx('card overflow-hidden', className)}>
       <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-4 sm:px-6">
         <div className="min-w-0">
-          <h2 id={id} className="text-[15px] font-semibold tracking-[-0.01em] text-ink">
+          <h2 id={id} className="text-[15px] font-semibold text-ink">
             {title}
           </h2>
           {description && <p className="mt-0.5 text-[13px] text-muted">{description}</p>}
@@ -218,7 +218,7 @@ function TimelineStage({ stage, slug }: { stage: Stage; slug: string }) {
           </span>
         </div>
         {stage.title && (
-          <p className="mt-2 text-subheading font-semibold leading-snug tracking-[-0.015em] text-ink">{stage.title}</p>
+          <p className="mt-2 text-subheading font-semibold leading-snug text-ink">{stage.title}</p>
         )}
         {stage.summary && <p className="mt-1.5 text-[15px] leading-relaxed text-ink-soft">{stage.summary}</p>}
 
@@ -231,7 +231,7 @@ function TimelineStage({ stage, slug }: { stage: Stage; slug: string }) {
               </span>
             )}
             {stage.dueAt && (
-              <span className={cx('inline-flex items-center gap-1.5', overdue && 'font-medium text-ember')}>
+              <span className={cx('inline-flex items-center gap-1.5', overdue && 'font-medium text-ember-ink')}>
                 <CalendarClock className="size-3.5" aria-hidden />
                 {overdue ? 'Lewat tenggat' : 'Tenggat'} {fmtDate(stage.dueAt)}
               </span>
@@ -531,7 +531,7 @@ export default function CasePage({ loaderData }: Route.ComponentProps) {
           {active?.dueAt && !decided && (
             <StatBlock
               label="Tenggat tahap"
-              value={<span className={cx(overdue && 'text-ember')}>{fmtShort(active.dueAt)}</span>}
+              value={<span className={cx(overdue && 'text-ember-ink')}>{fmtShort(active.dueAt)}</span>}
               hint={overdue ? 'Sudah terlewati' : undefined}
               className={statFit}
             />
@@ -649,7 +649,7 @@ export default function CasePage({ loaderData }: Route.ComponentProps) {
                 <span className="num">{verified}</span> sumber terverifikasi
               </p>
             </div>
-            <h2 id="koreksi" className="mt-4 text-[15px] font-semibold tracking-[-0.01em] text-ink">
+            <h2 id="koreksi" className="mt-4 text-[15px] font-semibold text-ink">
               Koreksi & hak jawab
             </h2>
             <p className="mt-1 text-[13px] leading-relaxed text-muted">

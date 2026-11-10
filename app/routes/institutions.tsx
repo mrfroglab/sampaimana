@@ -68,7 +68,7 @@ export default function Institutions({ loaderData }: Route.ComponentProps) {
                 className="card card-hover group flex h-full items-start justify-between gap-4 p-5"
               >
                 <span className="min-w-0">
-                  <span className="block text-[15px] font-semibold leading-snug tracking-[-0.01em] text-ink [overflow-wrap:anywhere]">
+                  <span className="block text-[15px] font-semibold leading-snug text-ink [overflow-wrap:anywhere]">
                     {i.name}
                   </span>
                   <span className="mt-1.5 block text-[13px] text-muted">

@@ -49,6 +49,17 @@ function useUnread(enabled: boolean) {
   return unread;
 }
 
+function useScrolled() {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const on = () => setScrolled(window.scrollY > 4);
+    on();
+    window.addEventListener('scroll', on, { passive: true });
+    return () => window.removeEventListener('scroll', on);
+  }, []);
+  return scrolled;
+}
+
 function useMac() {
   const [mac, setMac] = useState(false);
   useEffect(() => setMac(/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)), []);
@@ -87,7 +98,7 @@ function AccountMenu() {
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         aria-haspopup="menu"
-        className="grid size-9 place-items-center rounded-full bg-ink text-xs font-semibold text-on-ink transition-opacity hover:opacity-85"
+        className="grid size-9 place-items-center rounded-full bg-iron text-xs font-semibold text-[#fafafa] transition-opacity hover:opacity-85"
       >
         {initials}
         <span className="sr-only">Menu akun</span>
@@ -95,12 +106,12 @@ function AccountMenu() {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-11 z-50 w-64 animate-rise overflow-hidden rounded-2xl border border-line bg-raised p-1.5 shadow-pop"
+          className="absolute right-0 top-12 z-50 w-64 animate-rise overflow-hidden rounded-2xl border border-line bg-raised p-1.5 shadow-pop"
         >
           <div className="px-3 pb-3 pt-2">
             <p className="truncate text-sm font-semibold text-ink">{user.name}</p>
             <p className="truncate text-[13px] text-muted">{user.email}</p>
-            <span className="mt-2 inline-flex h-5 items-center rounded-full bg-ink/[0.06] px-2 text-[11px] font-medium text-ink-soft">
+            <span className="mt-2 inline-flex h-6 items-center rounded-lg border border-line px-2 text-[11px] font-medium text-ink-soft">
               {ROLE_LABEL[user.role]}
             </span>
           </div>
@@ -130,7 +141,7 @@ function AccountMenu() {
                 await logout();
                 navigate('/');
               }}
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-ink-soft hover:bg-ink/[0.06] hover:text-ink"
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-ink-soft hover:bg-ink/[0.05] hover:text-ink"
             >
               <LogOut className="size-4 text-muted" /> Keluar
             </button>
@@ -143,7 +154,7 @@ function AccountMenu() {
 
 function MenuLink({ to, icon: Icon, children }: { to: string; icon: typeof Bell; children: React.ReactNode }) {
   return (
-    <Link role="menuitem" to={to} className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-ink-soft hover:bg-ink/[0.06] hover:text-ink">
+    <Link role="menuitem" to={to} className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-ink-soft hover:bg-ink/[0.05] hover:text-ink">
       <Icon className="size-4 text-muted" /> {children}
     </Link>
   );
@@ -156,24 +167,30 @@ export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const mac = useMac();
+  const scrolled = useScrolled();
   useEffect(() => setMobileOpen(false), [location.pathname]);
   const isAdmin = location.pathname.startsWith('/redaksi');
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-paper/80 backdrop-blur-xl supports-[backdrop-filter]:bg-paper/70">
-      <div className={cx('mx-auto flex h-14 w-full items-center gap-2 px-4 sm:gap-4 sm:px-6 lg:px-8', isAdmin ? 'max-w-none' : 'max-w-[1280px]')}>
+    <header
+      className={cx(
+        'sticky top-0 z-40 border-b bg-paper/80 backdrop-blur-xl transition-colors supports-[backdrop-filter]:bg-paper/70',
+        scrolled || isAdmin || mobileOpen ? 'border-line' : 'border-transparent',
+      )}
+    >
+      <div className={cx('mx-auto flex h-16 w-full items-center gap-2 px-4 sm:gap-4 sm:px-6 lg:px-8', isAdmin ? 'max-w-none' : 'max-w-[1200px]')}>
         <Link to="/" aria-label="Sampai Mana — beranda" className="shrink-0 rounded-lg">
           <Wordmark />
         </Link>
-        <nav className="ml-2 hidden items-center gap-0.5 md:flex" aria-label="Utama">
+        <nav className="ml-4 hidden items-center gap-1 md:flex xl:absolute xl:left-1/2 xl:ml-0 xl:-translate-x-1/2" aria-label="Utama">
           {NAV.map((n) => (
             <NavLink
               key={n.to}
               to={n.to}
               className={({ isActive }) =>
                 cx(
-                  'rounded-full px-3 py-1.5 text-sm transition-colors',
-                  isActive ? 'bg-ink/[0.06] font-medium text-ink' : 'text-muted hover:text-ink',
+                  'rounded-full px-3.5 py-2 text-sm transition-colors',
+                  isActive ? 'bg-raised font-medium text-ink shadow-pill ring-1 ring-line' : 'text-muted hover:text-ink',
                 )
               }
             >
@@ -185,29 +202,29 @@ export function Header() {
         <div className="ml-auto flex items-center gap-1 sm:gap-1.5">
           <button
             onClick={openCommandMenu}
-            className="hidden h-9 w-60 items-center gap-2 rounded-full bg-ink/[0.045] pl-3.5 pr-1.5 text-sm text-muted transition-colors hover:bg-ink/[0.07] lg:flex xl:w-72"
+            className="hidden h-9 w-44 items-center gap-2 rounded-xl border border-line bg-raised pl-3 pr-1.5 text-sm text-muted transition-colors hover:border-line-strong xl:flex"
           >
             <Search className="size-4" />
-            <span className="flex-1 text-left">Cari kasus…</span>
+            <span className="flex-1 text-left">Cari…</span>
             <span className="flex items-center gap-0.5">
               <kbd className="kbd" suppressHydrationWarning>{mac ? '⌘' : 'Ctrl'}</kbd>
               <kbd className="kbd">K</kbd>
             </span>
           </button>
-          <button onClick={openCommandMenu} className={cx(iconBtn, 'lg:hidden')} aria-label="Cari kasus">
+          <button onClick={openCommandMenu} className={cx(iconBtn, 'xl:hidden')} aria-label="Cari kasus">
             <Search className="size-[18px]" />
           </button>
           <button onClick={toggle} className={iconBtn} aria-label={theme === 'dark' ? 'Gunakan tema terang' : 'Gunakan tema gelap'}>
             {theme === 'dark' ? <Sun className="size-[18px]" /> : <Moon className="size-[18px]" />}
           </button>
 
-          {status === 'loading' && <span className="ml-1 hidden h-8 w-[72px] animate-pulse rounded-full bg-ink/[0.06] sm:block" aria-hidden />}
+          {status === 'loading' && <span className="ml-1 hidden h-9 w-[72px] animate-pulse rounded-full bg-ink/[0.05] sm:block" aria-hidden />}
           {status === 'anonymous' && (
             <>
               <Link to={`/masuk?next=${encodeURIComponent(location.pathname)}`} className={buttonClass('ghost', 'sm', 'ml-1 max-sm:hidden')}>
                 Masuk
               </Link>
-              <Link to="/daftar" className={buttonClass('primary', 'sm', 'max-sm:hidden')}>
+              <Link to="/daftar" className={buttonClass('primary', 'md', 'h-9 max-sm:hidden', true)}>
                 Daftar
               </Link>
             </>
@@ -217,7 +234,7 @@ export function Header() {
               <Link to="/akun/notifikasi" className={cx(iconBtn, 'relative')} aria-label={`Notifikasi${unread ? `, ${unread} belum dibaca` : ''}`}>
                 <Bell className="size-[18px]" />
                 {unread > 0 && (
-                  <span className="absolute right-0.5 top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-ink px-1 text-[10px] font-semibold leading-none text-on-ink ring-2 ring-paper num">
+                  <span className="absolute right-0.5 top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-ember px-1 text-[10px] font-semibold leading-none text-on-ember ring-2 ring-paper num">
                     {unread > 9 ? '9+' : unread}
                   </span>
                 )}
@@ -241,7 +258,7 @@ export function Header() {
                 key={n.to}
                 to={n.to}
                 className={({ isActive }) =>
-                  cx('rounded-xl px-3 py-2.5 text-[15px]', isActive ? 'bg-ink/[0.06] font-medium text-ink' : 'text-ink-soft')
+                  cx('rounded-xl px-3.5 py-3 text-base', isActive ? 'bg-raised font-medium text-ink ring-1 ring-line' : 'text-ink-soft')
                 }
               >
                 {n.label}

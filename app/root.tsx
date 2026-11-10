@@ -18,11 +18,12 @@ import { EmbedError } from './components/embed';
 import { ensureSession } from './lib/session';
 import { cx } from './lib/format';
 // Fonts are self-hosted (no request to Google): fewer third parties, and embeds stay cookie- and tracker-free.
-import '@fontsource/geist/400.css';
-import '@fontsource/geist/500.css';
-import '@fontsource/geist/600.css';
-import '@fontsource/geist-mono/400.css';
-import '@fontsource/geist-mono/500.css';
+import '@fontsource/dm-sans/400.css';
+import '@fontsource/dm-sans/500.css';
+import '@fontsource/dm-sans/600.css';
+import '@fontsource/dm-sans/700.css';
+import '@fontsource/dm-mono/400.css';
+import '@fontsource/dm-mono/500.css';
 import './app.css';
 
 export const links: Route.LinksFunction = () => [
@@ -46,8 +47,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-        <meta name="theme-color" content="#f5f5f5" media="(prefers-color-scheme: light)" />
-        <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)" />
+        <meta name="theme-color" content="#f4f4f5" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)" />
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <Meta />
         <Links />
@@ -74,6 +75,8 @@ function NavigationBar() {
 
 export default function App() {
   const embed = useIsEmbed();
+  // The newsroom is a full-height tool screen: no marketing footer under it.
+  const tool = useLocation().pathname.startsWith('/redaksi');
   useEffect(() => {
     // Anonymous embeds never touch the auth/refresh endpoint.
     if (!embed) void ensureSession();
@@ -82,14 +85,14 @@ export default function App() {
   return (
     <ToastProvider>
       <NavigationBar />
-      <a href="#konten" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:rounded-full focus:bg-ink focus:px-4 focus:py-2 focus:text-on-ink">
+      <a href="#konten" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:rounded-xl focus:bg-ink focus:px-4 focus:py-2 focus:text-on-ink">
         Lewati ke konten
       </a>
       <Header />
       <main id="konten">
         <Outlet />
       </main>
-      <Footer />
+      {!tool && <Footer />}
     </ToastProvider>
   );
 }
@@ -116,7 +119,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
       <Header />
       <main id="konten" className="container-page grid min-h-[60dvh] place-items-center py-20">
         <div className="flex max-w-lg flex-col items-center text-center">
-          <span className="rounded-full border border-line bg-raised px-3 py-1 font-mono text-xs text-muted shadow-card">
+          <span className="rounded-lg border border-line bg-raised px-2.5 py-1 font-mono text-xs text-muted">
             Galat {status}
           </span>
           <h1 className="mt-5 text-heading font-semibold text-ink sm:text-heading-lg">{title}</h1>

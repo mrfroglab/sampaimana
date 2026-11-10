@@ -89,7 +89,7 @@ export default function DataPage() {
               </span>
               <Badge tone="outline">CC BY 4.0</Badge>
             </div>
-            <p className="mt-5 text-subheading font-semibold tracking-[-0.01em] text-ink">{d.title}</p>
+            <p className="mt-5 text-subheading font-semibold text-ink">{d.title}</p>
             <p className="mt-1 flex-1 text-sm text-muted">{d.desc}</p>
             <span className={buttonClass('primary', 'sm', 'mt-6 self-start')}>
               <Download /> {d.cta}

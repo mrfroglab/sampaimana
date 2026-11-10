@@ -68,7 +68,7 @@ function card(c: CaseDetail): ReactNode {
           display: 'block',
           fontSize: titleSize(title.length),
           fontWeight: 600,
-          letterSpacing: '-0.03em',
+          letterSpacing: '-0.01em',
           lineHeight: 1.08,
           color: C.ink,
           lineClamp: 3,

@@ -270,7 +270,7 @@ function ContributionCard({
         <div className="min-w-0">
           <Link
             to={`/redaksi/kasus/${item.case.id}`}
-            className="text-subheading font-semibold leading-snug tracking-[-0.01em] text-ink hover:underline"
+            className="text-subheading font-semibold leading-snug text-ink hover:underline"
           >
             {item.case.title}
           </Link>
@@ -314,7 +314,7 @@ function ContributionCard({
                       rel="noopener noreferrer nofollow"
                       className="tile group flex min-w-0 items-center gap-3 px-3 py-2.5 transition-colors hover:bg-ink/[0.07]"
                     >
-                      <span className="grid size-8 shrink-0 place-items-center rounded-full bg-raised text-muted shadow-card">
+                      <span className="grid size-8 shrink-0 place-items-center rounded-xl border border-line bg-raised text-muted">
                         <Link2 className="size-4" aria-hidden />
                       </span>
                       <span className="min-w-0 flex-1">
@@ -338,7 +338,7 @@ function ContributionCard({
                         )
                       }
                     >
-                      <span className="grid size-8 shrink-0 place-items-center rounded-full bg-raised text-muted shadow-card">
+                      <span className="grid size-8 shrink-0 place-items-center rounded-xl border border-line bg-raised text-muted">
                         <FileText className="size-4" aria-hidden />
                       </span>
                       <span className="min-w-0 flex-1">
@@ -391,7 +391,7 @@ function ContributionCard({
           </div>
           <dl className="mt-4 grid grid-cols-2 gap-x-3 gap-y-1.5 num">
             <dt className="text-muted">Usia akun</dt>
-            <dd className={cx('text-right font-medium', newAccount ? 'text-ember' : 'text-ink')}>{accountDays} hari</dd>
+            <dd className={cx('text-right font-medium', newAccount ? 'text-ember-ink' : 'text-ink')}>{accountDays} hari</dd>
             <dt className="text-muted">Diterima</dt>
             <dd className="text-right font-medium text-ink">{rep.approved}</dd>
             <dt className="text-muted">Ditolak</dt>

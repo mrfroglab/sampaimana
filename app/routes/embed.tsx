@@ -46,7 +46,7 @@ export default function EmbedPage({ loaderData }: Route.ComponentProps) {
           </span>
         </div>
 
-        <h1 className="mt-3 line-clamp-2 text-[17px] font-semibold leading-snug tracking-[-0.015em] text-ink [overflow-wrap:anywhere]">
+        <h1 className="mt-3 line-clamp-2 text-[17px] font-semibold leading-snug text-ink [overflow-wrap:anywhere]">
           <a
             href={href}
             target="_blank"
@@ -67,13 +67,13 @@ export default function EmbedPage({ loaderData }: Route.ComponentProps) {
           </div>
         </div>
 
-        <p className={cx('mt-3 flex items-start gap-1.5 text-[13px] leading-snug', overdue ? 'font-medium text-ember' : 'text-muted')}>
+        <p className={cx('mt-3 flex items-start gap-1.5 text-[13px] leading-snug', overdue ? 'font-medium text-ember-ink' : 'text-muted')}>
           {decided ? <Gavel className="mt-px size-3.5 shrink-0" aria-hidden /> : <Clock className="mt-px size-3.5 shrink-0" aria-hidden />}
           <span className="min-w-0">
             {decided ? 'Diputus' : STATUS_LABEL[item.currentStatus]}
             {active && (decided ? ` pada ${fmtShort(active.startedAt)}` : ` sejak ${fmtShort(active.startedAt)}`)}
             {overdue && ` · lewat tenggat ${fmtShort(active!.dueAt)}`}
-            <span className={cx(overdue ? 'text-ember' : 'text-muted')}>
+            <span className={cx(overdue ? 'text-ember-ink' : 'text-muted')}>
               {' · diperbarui '}
               <RelTime date={item.lastActivityAt} />
             </span>

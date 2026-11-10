@@ -151,11 +151,11 @@ export function Tabs<T extends string>({
 }) {
   return (
     <div className="max-w-full overflow-x-auto [scrollbar-width:none]">
-      <div role="tablist" aria-label={label} className="inline-flex gap-1 rounded-full bg-ink/[0.045] p-1">
+      <div role="tablist" aria-label={label} className="inline-flex gap-1 rounded-xl bg-ink/[0.05] p-1">
         {options.map((o) => {
           const active = o.value === value;
           const cls = cx(
-            'inline-flex h-8 shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-3.5 text-[13px] font-medium transition-[background-color,color,box-shadow]',
+            'inline-flex h-8 shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3.5 text-[13px] font-medium transition-[background-color,color,box-shadow]',
             active ? 'bg-raised text-ink shadow-card' : 'text-muted hover:text-ink',
           );
           const inner = (
@@ -164,7 +164,7 @@ export function Tabs<T extends string>({
               {o.count !== undefined && (
                 <span
                   className={cx(
-                    'grid h-[18px] min-w-[18px] place-items-center rounded-full px-1.5 text-[11px] num',
+                    'grid h-[18px] min-w-[18px] place-items-center rounded-md px-1.5 text-[11px] num',
                     active ? 'bg-ink/[0.06] text-ink' : 'text-muted',
                   )}
                 >
@@ -218,7 +218,7 @@ export function StatTile({
           value={value}
           hint={
             note && (
-              <span className={cx('inline-flex items-center gap-1.5', alert && 'font-medium text-ember')}>
+              <span className={cx('inline-flex items-center gap-1.5', alert && 'font-medium text-ember-ink')}>
                 {alert && <span className="size-1.5 shrink-0 rounded-full bg-ember" aria-hidden />}
                 {note}
               </span>

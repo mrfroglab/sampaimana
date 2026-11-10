@@ -13,7 +13,7 @@ export function AuthShell({ kicker, title, children, aside }: { kicker: string; 
       <div className="blueprint pointer-events-none absolute inset-0 -z-10" aria-hidden />
       <div className="container-page grid min-h-[calc(100dvh-4rem)] items-center gap-12 py-10 sm:py-16 lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-20">
         <div className="hidden min-w-0 lg:block">
-          <p className="kicker">Sampai Mana</p>
+          <p className="eyebrow">Sampai Mana</p>
           <div className="mt-4 max-w-md text-heading font-semibold text-ink">{aside}</div>
           <div className="card mt-10 max-w-lg px-6 pb-6 pt-5">
             <p className="text-[13px] text-muted">Setiap kasus, tahap demi tahap</p>

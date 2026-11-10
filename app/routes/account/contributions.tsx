@@ -63,7 +63,7 @@ export default function MyContributions({ loaderData }: Route.ComponentProps) {
                   </div>
                   <Link
                     to={`/kasus/${c.case.slug}`}
-                    className="mt-2 block text-[15px] font-semibold leading-snug tracking-[-0.01em] text-ink hover:underline hover:decoration-line-strong hover:underline-offset-[3px]"
+                    className="mt-2 block text-[15px] font-semibold leading-snug text-ink hover:underline hover:decoration-line-strong hover:underline-offset-[3px]"
                   >
                     {c.case.title}
                   </Link>
@@ -76,7 +76,7 @@ export default function MyContributions({ loaderData }: Route.ComponentProps) {
                           href={l}
                           target="_blank"
                           rel="noopener noreferrer nofollow"
-                          className="inline-flex h-[22px] max-w-full items-center gap-1 rounded-full border border-line px-2 text-xs text-ink-soft transition-colors hover:bg-ink/[0.06] hover:text-ink"
+                          className="inline-flex h-6 max-w-full items-center gap-1 rounded-lg border border-line px-2 text-xs text-ink-soft transition-colors hover:bg-ink/[0.06] hover:text-ink"
                         >
                           <Link2 className="size-3 shrink-0" aria-hidden />
                           <span className="truncate">{hostOf(l)}</span>
@@ -85,7 +85,7 @@ export default function MyContributions({ loaderData }: Route.ComponentProps) {
                       {c.proofFiles.map((f) => (
                         <span
                           key={f.fileName}
-                          className="inline-flex h-[22px] max-w-full items-center gap-1 rounded-full bg-ink/[0.06] px-2 text-xs text-ink-soft"
+                          className="inline-flex h-6 max-w-full items-center gap-1 rounded-lg bg-ink/[0.05] px-2 text-xs text-ink-soft"
                         >
                           <Paperclip className="size-3 shrink-0" aria-hidden />
                           <span className="truncate">{f.fileName}</span>

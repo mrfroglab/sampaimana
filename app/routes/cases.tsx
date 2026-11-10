@@ -123,7 +123,7 @@ export default function Cases({ loaderData }: Route.ComponentProps) {
               <label
                 key={s}
                 className={cx(
-                  'inline-flex h-8 cursor-pointer select-none items-center rounded-full px-3 text-[13px] font-medium transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus',
+                  'inline-flex h-8 cursor-pointer select-none items-center rounded-lg px-3 text-[13px] font-medium transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus',
                   checked ? 'bg-ink text-on-ink hover:bg-ink/85' : 'bg-ink/[0.06] text-ink-soft hover:bg-ink/[0.1] hover:text-ink',
                 )}
               >

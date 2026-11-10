@@ -16,8 +16,8 @@
     "brand": "node scripts/generate-brand-assets.mjs"
   },
   "dependencies": {
-    "@fontsource/geist": "^5.3.0",
-    "@fontsource/geist-mono": "^5.3.0",
+    "@fontsource/dm-mono": "^5.3.0",
+    "@fontsource/dm-sans": "^5.3.0",
     "@react-router/node": "7.18.5",
     "@react-router/serve": "7.18.5",
     "@resvg/resvg-js": "^2.6.2",

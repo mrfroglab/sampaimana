@@ -43,7 +43,7 @@ function CountBadge({ count, active }: { count: number; active?: boolean }) {
   return (
     <span
       className={cx(
-        'ml-auto grid h-5 min-w-5 place-items-center rounded-full px-1.5 text-[11px] font-medium leading-none num',
+        'ml-auto grid h-5 min-w-5 place-items-center rounded-md px-1.5 text-[11px] font-medium leading-none num',
         active ? 'bg-ink text-on-ink' : 'bg-ink/[0.08] text-ink',
       )}
       aria-label={`${count} menunggu`}
@@ -73,7 +73,7 @@ export default function AdminLayout({ loaderData }: Route.ComponentProps) {
   }));
 
   return (
-    <div className="lg:grid lg:grid-cols-[248px_minmax(0,1fr)]">
+    <div className="min-h-[calc(100dvh-4rem)] lg:grid lg:grid-cols-[248px_minmax(0,1fr)]">
       {/* Desktop sidebar */}
       <aside className="hidden border-r border-line bg-alt lg:block">
         <div className="sticky top-16 flex h-[calc(100dvh-4rem)] flex-col overflow-y-auto px-3 py-5">
@@ -98,7 +98,7 @@ export default function AdminLayout({ loaderData }: Route.ComponentProps) {
                           end={end}
                           className={({ isActive }) =>
                             cx(
-                              'flex h-9 items-center gap-2.5 rounded-full px-3 text-sm transition-colors',
+                              'flex h-9 items-center gap-2.5 rounded-xl px-3 text-sm transition-colors',
                               isActive ? 'bg-ink/[0.06] font-medium text-ink' : 'text-muted hover:bg-ink/[0.04] hover:text-ink',
                             )
                           }
@@ -162,7 +162,7 @@ export default function AdminLayout({ loaderData }: Route.ComponentProps) {
                     end={end}
                     className={({ isActive }) =>
                       cx(
-                        'flex h-8 items-center gap-2 whitespace-nowrap rounded-full px-3 text-[13px] transition-colors',
+                        'flex h-8 items-center gap-2 whitespace-nowrap rounded-lg px-3 text-[13px] transition-colors',
                         isActive ? 'bg-ink/[0.06] font-medium text-ink' : 'text-muted hover:bg-ink/[0.04] hover:text-ink',
                       )
                     }

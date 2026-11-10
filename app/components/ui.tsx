@@ -19,10 +19,10 @@ import { AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, Info, Loader2, 
 import { cx, fmtRelative, fmtShort } from '~/lib/format';
 
 /*
- * Primitives for the monochrome system (see DESIGN.md).
- * Interactive elements are pills (rounded-full), containers are 24px cards,
- * nested tiles are 10px. Hover/fill states use translucent ink so they work on
- * the canvas, on cards, and in dark mode alike.
+ * Primitives for the zinc system (see DESIGN.md).
+ * Buttons and inputs are 14px, badges and nested tiles 12px, cards 36px (28px when
+ * dense), pills only for navigation CTAs. Hairline borders do the elevation.
+ * Hover/fill states use translucent ink so they work on any surface and in dark mode.
  */
 
 /* ---------- Buttons ---------- */
@@ -31,31 +31,34 @@ type Variant = 'primary' | 'accent' | 'secondary' | 'outline' | 'ghost' | 'dange
 type Size = 'xs' | 'sm' | 'md' | 'lg' | 'icon' | 'icon-sm';
 
 const variants: Record<Variant, string> = {
-  primary: 'bg-ink text-on-ink hover:bg-ink/85',
+  // Obsidian fill with the hairline ring + inset highlight: depth without a drop shadow.
+  primary: 'bg-ink text-on-ink shadow-button hover:bg-ink/90',
   // "accent" is the same high-emphasis treatment: color is never used for emphasis.
-  accent: 'bg-ink text-on-ink hover:bg-ink/85',
-  secondary: 'bg-ink/[0.06] text-ink hover:bg-ink/[0.1]',
-  outline: 'border border-line bg-raised text-ink shadow-[0_1px_2px_rgb(0_0_0/0.04)] hover:bg-sunk',
-  ghost: 'text-ink-soft hover:bg-ink/[0.06] hover:text-ink',
+  accent: 'bg-ink text-on-ink shadow-button hover:bg-ink/90',
+  secondary: 'bg-ink/[0.05] text-ink hover:bg-ink/[0.09]',
+  outline: 'border border-line bg-raised text-ink-soft hover:border-line-strong hover:text-ink',
+  ghost: 'text-ink-soft hover:bg-ink/[0.05] hover:text-ink',
   quiet: 'text-muted hover:text-ink',
   danger: 'bg-danger-wash text-danger hover:bg-danger/15',
 };
+// Radius follows size: 14px for buttons, 12px for the small controls.
 const sizes: Record<Size, string> = {
-  xs: 'h-7 px-2.5 text-xs gap-1',
-  sm: 'h-8 px-3 text-[13px] gap-1.5',
-  md: 'h-9 px-4 text-sm gap-2',
-  lg: 'h-11 px-5 text-[15px] gap-2',
-  icon: 'size-9',
-  'icon-sm': 'size-8',
+  xs: 'h-7 px-2.5 text-xs gap-1 rounded-lg',
+  sm: 'h-8 px-3 text-[13px] gap-1.5 rounded-lg',
+  md: 'h-10 px-4 text-sm gap-2 rounded-xl',
+  lg: 'h-12 px-5 text-[15px] gap-2 rounded-xl',
+  icon: 'size-9 rounded-xl',
+  'icon-sm': 'size-8 rounded-lg',
 };
 
-export const buttonClass = (variant: Variant = 'primary', size: Size = 'md', extra?: string) =>
+/** `pill` is only for navigation CTAs (header sign-up, hero search). */
+export const buttonClass = (variant: Variant = 'primary', size: Size = 'md', extra?: string, pill?: boolean) =>
   cx(
-    'inline-flex shrink-0 select-none items-center justify-center whitespace-nowrap rounded-full font-medium transition-[background-color,color,box-shadow,opacity]',
+    'inline-flex shrink-0 select-none items-center justify-center whitespace-nowrap font-medium transition-[background-color,border-color,color,box-shadow,opacity]',
     'disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50',
     '[&_svg]:size-4 [&_svg]:shrink-0',
     variants[variant],
-    sizes[size],
+    pill ? sizes[size].replace(/rounded-\S+/, 'rounded-full') : sizes[size],
     extra,
   );
 
@@ -88,7 +91,7 @@ export function LinkButton({
 
 /* ---------- Surfaces ---------- */
 
-/** White 24px card with a hairline border. `interactive` adds a hover lift. */
+/** White 36px card with a hairline border. `interactive` darkens the border on hover. */
 export function Card({
   className,
   interactive,
@@ -115,9 +118,9 @@ export function CardHeader({
   className?: string;
 }) {
   return (
-    <div className={cx('flex items-start justify-between gap-4 border-b border-line px-5 py-4', className)}>
+    <div className={cx('flex items-start justify-between gap-4 border-b border-line px-6 py-5', className)}>
       <div className="min-w-0">
-        <h3 className="text-[15px] font-semibold tracking-[-0.01em] text-ink">{title}</h3>
+        <h3 className="text-base font-semibold text-ink">{title}</h3>
         {description && <p className="mt-0.5 text-[13px] text-muted">{description}</p>}
       </div>
       {action}
@@ -125,7 +128,7 @@ export function CardHeader({
   );
 }
 
-/** Large metric: caption label, big tabular value, optional hint. Typography only. */
+/** Large metric: big tabular value with its label. Typography only. */
 export function StatBlock({
   label,
   value,
@@ -138,10 +141,10 @@ export function StatBlock({
   className?: string;
 }) {
   return (
-    <div className={cx('min-w-0', className)}>
-      <dt className="kicker">{label}</dt>
-      <dd className="mt-2 text-heading-lg font-semibold leading-none tracking-[-0.04em] text-ink num">{value}</dd>
-      {hint && <dd className="mt-2 text-[13px] text-muted">{hint}</dd>}
+    <div className={cx('flex min-w-0 flex-col', className)}>
+      <dt className="text-sm text-muted">{label}</dt>
+      <dd className="order-first mb-2 text-heading font-semibold leading-none text-ink num">{value}</dd>
+      {hint && <dd className="mt-1 text-[13px] text-muted">{hint}</dd>}
     </div>
   );
 }
@@ -165,13 +168,13 @@ export function PageHeader({
   children?: ReactNode;
 }) {
   return (
-    <header className={cx('pb-8 pt-10 sm:pt-14', className)}>
-      {crumbs && <Breadcrumbs items={crumbs} className="mb-5" />}
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+    <header className={cx('pb-10 pt-10 sm:pt-16', className)}>
+      {crumbs && <Breadcrumbs items={crumbs} className="mb-6" />}
+      <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0 max-w-3xl">
-          {kicker && <p className="kicker mb-3">{kicker}</p>}
-          <h1 className="text-heading font-semibold text-ink sm:text-heading-lg">{title}</h1>
-          {description && <p className="mt-3 max-w-2xl text-body-lg text-muted">{description}</p>}
+          {kicker && <p className="eyebrow mb-5">{kicker}</p>}
+          <h1 className="text-heading-lg font-semibold text-ink">{title}</h1>
+          {description && <p className="mt-4 max-w-2xl text-body-lg text-muted">{description}</p>}
         </div>
         {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
       </div>
@@ -213,8 +216,8 @@ export function Kbd({ children, className }: { children: ReactNode; className?: 
 /* ---------- Form fields ---------- */
 
 const fieldBase = cx(
-  'w-full border border-transparent bg-ink/[0.045] px-3.5 text-sm text-ink placeholder:text-muted transition-[background-color,border-color,box-shadow]',
-  'hover:bg-ink/[0.07] focus:border-line-strong focus:bg-raised focus:outline-none focus:ring-4 focus:ring-ink/[0.06]',
+  'w-full border border-line bg-raised px-4 text-sm text-ink placeholder:text-faint transition-[background-color,border-color,box-shadow]',
+  'hover:border-line-strong focus:border-ink/40 focus:outline-none focus:ring-4 focus:ring-ink/[0.06]',
   'disabled:cursor-not-allowed disabled:opacity-60',
   'aria-[invalid=true]:border-danger/50 aria-[invalid=true]:bg-danger-wash/60 aria-[invalid=true]:focus:ring-danger/10',
 );
@@ -256,7 +259,7 @@ export function Field({
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement> & { invalid?: boolean }>(
   function Input({ className, invalid, ...rest }, ref) {
-    return <input ref={ref} aria-invalid={invalid || undefined} className={cx(fieldBase, 'h-10 rounded-full', className)} {...rest} />;
+    return <input ref={ref} aria-invalid={invalid || undefined} className={cx(fieldBase, 'h-11 rounded-xl', className)} {...rest} />;
   },
 );
 
@@ -269,7 +272,7 @@ export const Textarea = forwardRef<
       ref={ref}
       rows={rows}
       aria-invalid={invalid || undefined}
-      className={cx(fieldBase, 'rounded-2xl py-2.5 leading-relaxed', className)}
+      className={cx(fieldBase, 'rounded-xl py-3 leading-relaxed', className)}
       {...rest}
     />
   );
@@ -281,10 +284,10 @@ export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSel
       <select
         ref={ref}
         aria-invalid={invalid || undefined}
-        className={cx(fieldBase, 'h-10 cursor-pointer appearance-none rounded-full bg-[length:12px] bg-[right_14px_center] bg-no-repeat pr-9', className)}
+        className={cx(fieldBase, 'h-11 cursor-pointer appearance-none rounded-xl bg-[length:12px] bg-[right_14px_center] bg-no-repeat pr-9', className)}
         style={{
           backgroundImage:
-            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5l3.5 3.5 3.5-3.5' fill='none' stroke='%23737373' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\")",
+            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5l3.5 3.5 3.5-3.5' fill='none' stroke='%2371717a' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\")",
         }}
         {...rest}
       >
@@ -309,14 +312,18 @@ export function Checkbox({ label, hint, ...rest }: InputHTMLAttributes<HTMLInput
 
 /* ---------- Badges ---------- */
 
-type Tone = 'neutral' | 'accent' | 'ok' | 'warn' | 'danger' | 'ink' | 'outline';
+type Tone = 'neutral' | 'accent' | 'ok' | 'warn' | 'danger' | 'ink' | 'outline' | 'ember';
 const tones: Record<Tone, string> = {
-  neutral: 'bg-ink/[0.06] text-ink-soft border-transparent',
-  accent: 'bg-ink text-on-ink border-ink',
-  ink: 'bg-ink text-on-ink border-ink',
-  ok: 'bg-transparent text-ink border-line-strong',
-  outline: 'bg-transparent text-ink border-line-strong',
-  warn: 'bg-ember-wash text-ember border-transparent',
+  // Tag pill: transparent with a cloud hairline.
+  neutral: 'bg-transparent text-ink-soft border-line',
+  // Filled tag: iron fill for labels that need more weight.
+  accent: 'bg-iron text-[#fafafa] border-iron',
+  ink: 'bg-iron text-[#fafafa] border-iron',
+  ok: 'bg-raised text-ink border-line-strong',
+  outline: 'bg-raised text-ink border-line-strong',
+  // The single chromatic chip: highlights only (dark text keeps it readable).
+  ember: 'bg-ember text-on-ember border-ember',
+  warn: 'bg-ember-wash text-ember-ink border-transparent',
   danger: 'bg-danger-wash text-danger border-transparent',
 };
 
@@ -324,7 +331,7 @@ export function Badge({ tone = 'neutral', children, className }: { tone?: Tone; 
   return (
     <span
       className={cx(
-        'inline-flex h-[22px] items-center gap-1 whitespace-nowrap rounded-full border px-2 text-xs font-medium leading-none [&_svg]:size-3',
+        'inline-flex h-6 items-center gap-1 whitespace-nowrap rounded-lg border px-2 text-xs font-medium leading-none [&_svg]:size-3',
         tones[tone],
         className,
       )}
@@ -354,7 +361,7 @@ export function CategoryTag({
       {showColor && color ? (
         <span className="size-2 shrink-0 rounded-full" style={{ background: color }} aria-hidden />
       ) : (
-        <span className="size-1.5 shrink-0 rounded-full bg-ink/40" aria-hidden />
+        <span className="size-1.5 shrink-0 rounded-full bg-ink/35" aria-hidden />
       )}
       <span className="truncate">{name}</span>
     </span>
@@ -368,11 +375,11 @@ export function Alert({ tone = 'neutral', title, children }: { tone?: 'neutral' 
   const cls = {
     neutral: 'border-line bg-raised text-ink',
     ok: 'border-line bg-raised text-ink',
-    warn: 'border-ember/20 bg-ember-wash text-ember',
+    warn: 'border-ember/25 bg-ember-wash text-ember-ink',
     danger: 'border-danger/20 bg-danger-wash text-danger',
   }[tone];
   return (
-    <div className={cx('flex gap-3 rounded-2xl border px-4 py-3 text-sm', cls)} role={tone === 'danger' ? 'alert' : 'status'}>
+    <div className={cx('flex gap-3 rounded-2xl border px-4 py-3.5 text-sm', cls)} role={tone === 'danger' ? 'alert' : 'status'}>
       <Icon className="mt-0.5 size-4 shrink-0" aria-hidden />
       <div className="min-w-0">
         {title && <p className="font-medium">{title}</p>}
@@ -384,9 +391,9 @@ export function Alert({ tone = 'neutral', title, children }: { tone?: 'neutral' 
 
 export function EmptyState({ title, children, action, icon }: { title: ReactNode; children?: ReactNode; action?: ReactNode; icon?: ReactNode }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-line-strong px-6 py-14 text-center">
-      {icon && <div className="grid size-11 place-items-center rounded-full bg-ink/[0.06] text-muted [&_svg]:size-5">{icon}</div>}
-      <p className="text-subheading font-semibold tracking-[-0.01em] text-ink">{title}</p>
+    <div className="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-line-strong px-6 py-14 text-center sm:rounded-4xl">
+      {icon && <div className="grid size-12 place-items-center rounded-xl border border-line bg-raised text-muted [&_svg]:size-5">{icon}</div>}
+      <p className="text-subheading font-semibold text-ink">{title}</p>
       {children && <div className="max-w-md text-sm text-muted">{children}</div>}
       {action && <div className="mt-2">{action}</div>}
     </div>
@@ -394,20 +401,20 @@ export function EmptyState({ title, children, action, icon }: { title: ReactNode
 }
 
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={cx('animate-pulse rounded-lg bg-ink/[0.06]', className)} aria-hidden />;
+  return <div className={cx('animate-pulse rounded-lg bg-ink/[0.05]', className)} aria-hidden />;
 }
 
 export function PageSkeleton() {
   return (
     <div className="container-page py-14" aria-busy="true" aria-label="Memuat">
-      <Skeleton className="h-3 w-24 rounded-full" />
-      <Skeleton className="mt-4 h-10 w-2/3 rounded-xl" />
+      <Skeleton className="h-7 w-28 rounded-lg" />
+      <Skeleton className="mt-5 h-12 w-2/3 rounded-xl" />
       <div className="mt-10 grid gap-4 sm:grid-cols-3">
-        <Skeleton className="h-32 rounded-3xl" />
-        <Skeleton className="h-32 rounded-3xl" />
-        <Skeleton className="h-32 rounded-3xl" />
+        <Skeleton className="h-32 rounded-3xl sm:rounded-4xl" />
+        <Skeleton className="h-32 rounded-3xl sm:rounded-4xl" />
+        <Skeleton className="h-32 rounded-3xl sm:rounded-4xl" />
       </div>
-      <Skeleton className="mt-4 h-64 rounded-3xl" />
+      <Skeleton className="mt-4 h-64 rounded-3xl sm:rounded-4xl" />
     </div>
   );
 }
@@ -444,7 +451,7 @@ export function Dialog({
         if (e.target === ref.current) onClose();
       }}
       className={cx(
-        'm-auto w-[calc(100%-2rem)] overflow-hidden rounded-3xl border border-line bg-raised p-0 text-ink shadow-pop backdrop:bg-black/40 backdrop:backdrop-blur-[3px] open:animate-rise',
+        'm-auto w-[calc(100%-2rem)] overflow-hidden rounded-3xl border border-line bg-raised p-0 text-ink shadow-pop backdrop:bg-[#09090b]/40 backdrop:backdrop-blur-[3px] open:animate-rise',
         wide ? 'max-w-3xl' : 'max-w-lg',
       )}
     >
@@ -452,7 +459,7 @@ export function Dialog({
         <div className="max-h-[85dvh] overflow-y-auto">
           <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-line bg-raised/95 px-6 py-4 backdrop-blur">
             <div className="min-w-0">
-              <h2 className="text-subheading font-semibold tracking-[-0.015em]">{title}</h2>
+              <h2 className="text-subheading font-semibold">{title}</h2>
               {description && <p className="mt-0.5 text-sm text-muted">{description}</p>}
             </div>
             <button onClick={onClose} className={buttonClass('ghost', 'icon-sm', '-mr-2 text-muted')} aria-label="Tutup">
@@ -531,8 +538,8 @@ export function Pagination({ page, totalPages, hrefFor }: { page: number; totalP
               to={hrefFor(p)}
               aria-current={p === page ? 'page' : undefined}
               className={cx(
-                'grid size-8 place-items-center rounded-full font-medium num transition-colors',
-                p === page ? 'bg-ink text-on-ink' : 'text-ink-soft hover:bg-ink/[0.06]',
+                'grid size-9 place-items-center rounded-lg font-medium num transition-colors',
+                p === page ? 'bg-ink text-on-ink' : 'border border-transparent text-ink-soft hover:border-line hover:bg-raised',
               )}
             >
               {p}
@@ -568,8 +575,8 @@ export function SectionHeading({ kicker, title, action, className }: { kicker?: 
   return (
     <div className={cx('flex items-end justify-between gap-4', className)}>
       <div className="min-w-0">
-        {kicker && <p className="kicker">{kicker}</p>}
-        <h2 className={cx('text-heading-sm font-semibold text-ink', Boolean(kicker) && 'mt-1.5')}>{title}</h2>
+        {kicker && <p className="eyebrow">{kicker}</p>}
+        <h2 className={cx('text-heading-sm font-semibold text-ink', Boolean(kicker) && 'mt-4')}>{title}</h2>
       </div>
       {action}
     </div>

@@ -1,69 +1,86 @@
 @import 'tailwindcss';
 
 /*
- * Sampai Mana — design tokens ("clinical blueprint on frosted paper").
+ * Sampai Mana — design tokens ("editorial zinc grid with confetti-orange punctuation").
  *
- * Achromatic by default: canvas → card → input fill layering, hairline borders,
- * whisper-quiet elevation. One chromatic hue, ember, reserved for the live
- * "current stage" mark, the logo's question mark, and destructive/error states.
+ * A zinc-gray scale carries nearly the whole interface. Elevation is a 1px hairline,
+ * not a shadow. One vivid hue, ember orange, is punctuation only: the live
+ * "current stage" mark, the logo dot, highlight chips and attention/error states.
  * See DESIGN.md for the rules. Light/dark values swap through [data-theme].
  */
 :root,
 [data-theme='light'] {
-  --paper: #f5f5f5; /* canvas: page background */
-  --paper-raised: #ffffff; /* card / popover surface */
-  --paper-alt: #fafafa; /* sidebar, subtle card variant */
-  --paper-sunk: #f5f5f5; /* input fill, hover fill on cards */
-  --ink: #0a0a0a;
-  --ink-soft: #171717;
-  --muted: #737373;
-  --faint: #a3a3a3;
-  --line: #e5e5e5;
-  --line-strong: #d4d4d4;
-  --accent: #0a0a0a; /* emphasis is ink, never color */
-  --accent-ink: #0a0a0a;
-  --accent-wash: #f5f5f5;
-  --ember: #e7000b;
-  --ember-wash: #fef2f2;
-  --ok: #0a0a0a;
-  --ok-wash: #f5f5f5;
-  --warn: #e7000b;
-  --warn-wash: #fef2f2;
-  --danger: #e7000b;
-  --danger-wash: #fef2f2;
-  --focus: #737373;
+  --paper: #f4f4f5; /* canvas: page background */
+  --paper-raised: #ffffff; /* card / popover / input surface */
+  --paper-alt: #fafafa; /* subtle card, sidebar */
+  --paper-sunk: #f4f4f5; /* nested tile, hover fill */
+  --feature: #18181b; /* dark feature band */
+  --feature-raised: #27272a;
+  --ink: #09090b; /* obsidian: headlines, primary actions */
+  --ink-soft: #18181b; /* graphite: body text */
+  --iron: #3f3f46; /* filled tags, outline-button text */
+  --muted: #52525b; /* steel: secondary text, metadata */
+  --faint: #a1a1aa; /* ash: placeholders, disabled, separators */
+  --line: #ececee; /* cloud: hairline borders */
+  --line-strong: #d4d4d8; /* mist: dividers, hovered borders */
+  --accent: #09090b; /* emphasis is ink, never color */
+  --accent-ink: #09090b;
+  --accent-wash: #f4f4f5;
+  --ember: #ff5a00; /* the one vivid color: fills, dots, chips (never text on white) */
+  --ember-ink: #c2410c; /* ember as readable text */
+  --ember-wash: #fff1e8;
+  --ok: #09090b;
+  --ok-wash: #f4f4f5;
+  --warn: #c2410c;
+  --warn-wash: #fff1e8;
+  --danger: #c2410c;
+  --danger-wash: #fff1e8;
+  --focus: #71717a;
   --on-ink: #fafafa;
-  --shadow-card: 0 0 0 1px rgb(23 23 23 / 0.02), 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
-  --shadow-pop: 0 0 0 1px rgb(23 23 23 / 0.04), 0 12px 32px -8px rgb(0 0 0 / 0.16), 0 4px 8px -4px rgb(0 0 0 / 0.08);
+  --on-ember: #09090b;
+  --shadow-card: 0 0 #0000;
+  --shadow-pop: 0 0 0 1px rgb(9 9 11 / 0.03), 0 4px 12px rgb(0 0 0 / 0.04), 0 16px 40px -12px rgb(0 0 0 / 0.14);
+  --shadow-button: inset 0 0.5px 0 rgb(255 255 255 / 0.5), inset 0 9px 14px -5px rgb(117 123 133 / 0.4), 0 0 0 1.5px rgb(44 46 52),
+    0 4px 6px 0 rgb(0 0 0 / 0.14);
+  --shadow-pill: inset 0 -1px 0 rgb(228 228 231);
+  --grid-line: rgb(9 9 11 / 0.06);
   color-scheme: light;
 }
 
 [data-theme='dark'] {
-  --paper: #0a0a0a;
-  --paper-raised: #171717;
-  --paper-alt: #111111;
-  --paper-sunk: #262626;
+  --paper: #09090b;
+  --paper-raised: #141417;
+  --paper-alt: #111113;
+  --paper-sunk: #1f1f23;
+  --feature: #1f1f23;
+  --feature-raised: #2a2a2f;
   --ink: #fafafa;
-  --ink-soft: #e5e5e5;
-  --muted: #a1a1a1;
-  --faint: #737373;
-  --line: #262626;
-  --line-strong: #404040;
+  --ink-soft: #e4e4e7;
+  --iron: #3f3f46;
+  --muted: #a1a1aa;
+  --faint: #71717a;
+  --line: #27272a;
+  --line-strong: #3f3f46;
   --accent: #fafafa;
   --accent-ink: #fafafa;
-  --accent-wash: #262626;
-  --ember: #ff6467;
-  --ember-wash: #2a1415;
+  --accent-wash: #27272a;
+  --ember: #ff6a1a;
+  --ember-ink: #ff8a4c;
+  --ember-wash: #2b1609;
   --ok: #fafafa;
-  --ok-wash: #262626;
-  --warn: #ff6467;
-  --warn-wash: #2a1415;
-  --danger: #ff6467;
-  --danger-wash: #2a1415;
-  --focus: #a1a1a1;
-  --on-ink: #0a0a0a;
-  --shadow-card: 0 0 0 1px rgb(255 255 255 / 0.02);
-  --shadow-pop: 0 0 0 1px rgb(255 255 255 / 0.06), 0 16px 40px -8px rgb(0 0 0 / 0.7);
+  --ok-wash: #27272a;
+  --warn: #ff8a4c;
+  --warn-wash: #2b1609;
+  --danger: #ff8a4c;
+  --danger-wash: #2b1609;
+  --focus: #a1a1aa;
+  --on-ink: #09090b;
+  --on-ember: #09090b;
+  --shadow-card: 0 0 #0000;
+  --shadow-pop: 0 0 0 1px rgb(255 255 255 / 0.05), 0 16px 40px -8px rgb(0 0 0 / 0.7);
+  --shadow-button: inset 0 1px 0 rgb(255 255 255 / 0.6), 0 0 0 1px rgb(255 255 255 / 0.1), 0 4px 6px 0 rgb(0 0 0 / 0.3);
+  --shadow-pill: inset 0 -1px 0 rgb(255 255 255 / 0.06);
+  --grid-line: rgb(255 255 255 / 0.05);
   color-scheme: dark;
 }
 
@@ -81,8 +98,11 @@ html[data-embed] {
   --color-raised: var(--paper-raised);
   --color-alt: var(--paper-alt);
   --color-sunk: var(--paper-sunk);
+  --color-feature: var(--feature);
+  --color-feature-raised: var(--feature-raised);
   --color-ink: var(--ink);
   --color-ink-soft: var(--ink-soft);
+  --color-iron: var(--iron);
   --color-muted: var(--muted);
   --color-faint: var(--faint);
   --color-line: var(--line);
@@ -91,6 +111,7 @@ html[data-embed] {
   --color-accent-ink: var(--accent-ink);
   --color-accent-wash: var(--accent-wash);
   --color-ember: var(--ember);
+  --color-ember-ink: var(--ember-ink);
   --color-ember-wash: var(--ember-wash);
   --color-ok: var(--ok);
   --color-ok-wash: var(--ok-wash);
@@ -100,61 +121,61 @@ html[data-embed] {
   --color-danger-wash: var(--danger-wash);
   --color-focus: var(--focus);
   --color-on-ink: var(--on-ink);
+  --color-on-ember: var(--on-ember);
   --shadow-card: var(--shadow-card);
   --shadow-pop: var(--shadow-pop);
+  --shadow-button: var(--shadow-button);
+  --shadow-pill: var(--shadow-pill);
 }
 
 @theme {
-  --font-sans: 'Geist', 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'DM Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   /* Legacy alias: there is no serif in this system. */
-  --font-serif: 'Geist', 'Inter', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: 'Geist Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --font-serif: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  /* Only for case numbers, IDs and code. */
+  --font-mono: 'DM Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
 
-  /* Type scale (from the reference; only display is fluid) */
+  /* Type scale (from the reference; headings are fluid down to phone width, tracking normal) */
   --text-caption: 0.75rem;
-  --text-caption--line-height: 1.33;
-  --text-body: 0.875rem;
-  --text-body--line-height: 1.43;
-  --text-body-lg: 1rem;
-  --text-body-lg--line-height: 1.5;
-  --text-subheading: 1.125rem;
-  --text-subheading--line-height: 1.56;
-  --text-heading-sm: 1.5rem;
-  --text-heading-sm--line-height: 1.33;
-  --text-heading-sm--letter-spacing: -0.025em;
-  --text-heading: 1.875rem;
-  --text-heading--line-height: 1.2;
-  --text-heading--letter-spacing: -0.025em;
-  --text-heading-lg: 2.25rem;
-  --text-heading-lg--line-height: 1.11;
-  --text-heading-lg--letter-spacing: -0.03em;
-  --text-display: clamp(2.375rem, 1.6rem + 3.2vw, 3.5rem);
-  --text-display--line-height: 1.05;
-  --text-display--letter-spacing: -0.05em;
+  --text-caption--line-height: 1.64;
+  --text-body: 0.9375rem;
+  --text-body--line-height: 1.45;
+  --text-body-lg: 1.0625rem;
+  --text-body-lg--line-height: 1.6;
+  --text-subheading: 1.25rem;
+  --text-subheading--line-height: 1.4;
+  --text-heading-sm: clamp(1.5rem, 1.25rem + 1vw, 2rem);
+  --text-heading-sm--line-height: 1.22;
+  --text-heading: clamp(1.75rem, 1.35rem + 1.7vw, 2.5rem);
+  --text-heading--line-height: 1.18;
+  --text-heading-lg: clamp(2.125rem, 1.45rem + 2.9vw, 3.5rem);
+  --text-heading-lg--line-height: 1.14;
+  --text-display: clamp(2.5rem, 1.6rem + 3.9vw, 4rem);
+  --text-display--line-height: 1.08;
   /* Legacy alias used by older pages */
-  --text-headline: clamp(1.875rem, 1.5rem + 1.4vw, 2.25rem);
-  --text-headline--line-height: 1.11;
-  --text-headline--letter-spacing: -0.03em;
+  --text-headline: clamp(1.75rem, 1.35rem + 1.7vw, 2.5rem);
+  --text-headline--line-height: 1.18;
 
-  /* Radius: 6 small, 10 nested, 18 interactive, 24 containers */
+  /* Radius: 12 badges/tiles, 14 buttons/inputs, 20 menus/alerts, 28 dense cards, 36 cards */
   --radius-sm: 6px;
-  --radius-md: 6px;
-  --radius-lg: 10px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
   --radius-xl: 14px;
-  --radius-2xl: 18px;
-  --radius-3xl: 24px;
+  --radius-2xl: 20px;
+  --radius-3xl: 28px;
+  --radius-4xl: 36px;
 
   --animate-pulse-dot: pulse-dot 2.4s ease-out infinite;
-  --animate-rise: rise 0.4s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-rise: rise 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both;
   --animate-fade: fade 0.2s ease-out both;
 
   @keyframes pulse-dot {
-    0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--ember) 45%, transparent); }
+    0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--ember) 50%, transparent); }
     70% { box-shadow: 0 0 0 8px transparent; }
     100% { box-shadow: 0 0 0 0 transparent; }
   }
   @keyframes rise {
-    from { opacity: 0; transform: translateY(4px); }
+    from { opacity: 0; transform: translateY(6px); }
     to { opacity: 1; transform: none; }
   }
   @keyframes fade {
@@ -171,9 +192,8 @@ html[data-embed] {
     text-rendering: optimizeLegibility;
   }
   body {
-    @apply font-sans text-body antialiased;
+    @apply font-sans text-body text-ink-soft antialiased;
     background: var(--paper);
-    font-feature-settings: 'ss01', 'cv11';
     min-height: 100dvh;
   }
   ::selection {
@@ -187,6 +207,7 @@ html[data-embed] {
   h1, h2, h3, h4 {
     text-wrap: balance;
     font-weight: 600;
+    color: var(--ink);
   }
   p {
     text-wrap: pretty;
@@ -202,19 +223,31 @@ html[data-embed] {
 
 @layer components {
   .container-page {
-    @apply mx-auto w-full max-w-[1280px] px-4 sm:px-6 lg:px-8;
+    @apply mx-auto w-full max-w-[1200px] px-4 sm:px-6 lg:px-8;
   }
-  /* 12px uppercase caption label */
+  /* 12px caption label (sentence case, no tracking) */
   .kicker {
-    @apply text-caption font-medium uppercase tracking-[0.05em] text-muted;
+    @apply text-caption font-medium text-muted;
   }
-  /* White card on the canvas: hairline border, 24px radius, barely-there lift */
+  /* Tag pill used as a section eyebrow: hairline border, 12px radius */
+  .eyebrow {
+    @apply inline-flex h-7 items-center gap-1.5 rounded-lg border border-line bg-raised px-2.5 text-[13px] font-medium text-ink-soft;
+  }
+  /* White card on the canvas: 1px cloud hairline, 36px radius (28px on phones), no shadow */
   .card {
-    @apply rounded-3xl border border-line bg-raised shadow-card;
+    @apply rounded-3xl border border-line bg-raised sm:rounded-4xl;
   }
-  /* Card that reacts on hover (whole card is a link target) */
+  /* Denser card for tool screens (admin, dialogs): always 28px */
+  .card-dense {
+    @apply rounded-3xl sm:rounded-3xl;
+  }
+  /* Card that reacts on hover (whole card is a link target): border darkens, no lift */
   .card-hover {
-    @apply transition-[border-color,box-shadow] hover:border-line-strong hover:shadow-pop;
+    @apply transition-[border-color,background-color] hover:border-line-strong;
+  }
+  /* Inverted dark band for feature lists */
+  .feature {
+    @apply rounded-3xl bg-feature text-[#fafafa] sm:rounded-4xl;
   }
   /* Nested tile inside a card */
   .tile {
@@ -236,13 +269,14 @@ html[data-embed] {
   .num {
     font-variant-numeric: tabular-nums;
   }
-  /* Blueprint grid backdrop for heroes */
+  /* Editorial zinc grid backdrop for heroes */
   .blueprint {
     background-image:
-      linear-gradient(to right, color-mix(in oklab, var(--ink) 5%, transparent) 1px, transparent 1px),
-      linear-gradient(to bottom, color-mix(in oklab, var(--ink) 5%, transparent) 1px, transparent 1px);
-    background-size: 32px 32px;
-    mask-image: radial-gradient(ellipse 80% 70% at 50% 0%, #000 40%, transparent 100%);
+      linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+    background-size: 48px 48px;
+    background-position: -1px -1px;
+    mask-image: radial-gradient(ellipse 85% 75% at 30% 0%, #000 35%, transparent 100%);
   }
   /* Legacy no-op kept so old markup does not break */
   .paper-grain {
@@ -250,6 +284,6 @@ html[data-embed] {
   }
   /* Keyboard hint chip, e.g. ⌘K */
   .kbd {
-    @apply inline-flex h-5 min-w-5 items-center justify-center rounded-sm border border-line bg-raised px-1 font-mono text-[11px] font-medium text-muted;
+    @apply inline-flex h-5 min-w-5 items-center justify-center rounded-sm border border-line bg-raised px-1 font-sans text-[11px] font-medium text-muted;
   }
 }
