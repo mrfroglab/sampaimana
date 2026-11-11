@@ -10,7 +10,8 @@ Instruksi untuk agen AI (Claude Code dan sejenisnya) yang mengerjakan repo ini. 
 - Gambaran sistem: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Alur kerja: [CONTRIBUTING.md](CONTRIBUTING.md).
 - **Merge/push ke `main` = deploy ke produksi.** Jangan push ke `main` atau merge PR tanpa persetujuan eksplisit pengelola.
 - `PRD.md` (dokumen kebutuhan produk) ada di root checkout utama repo ini, di-*gitignore*. Baca bila ada, untuk memahami tujuan
-  dan prioritas produk. Di worktree, file itu tidak ikut: cari di checkout utama.
+  dan prioritas produk. Di worktree, file itu tidak ikut: cari di checkout utama. Setelah fitur di-merge, perbarui kolom status
+  di PRD (ruang lingkup dan backlog). PRD hanya memegang tujuan, prioritas, dan keputusan; detail teknis tetap di dokumen repo.
 
 ## Dokumentasi harus tetap sinkron
 
