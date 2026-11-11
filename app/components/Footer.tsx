@@ -21,6 +21,8 @@ const COLS = [
       { to: '/tentang', label: 'Metodologi & verifikasi' },
       { to: '/tentang#koreksi', label: 'Koreksi & hak jawab' },
       { to: '/tentang#disclaimer', label: 'Penafian hukum' },
+      { to: '/privasi', label: 'Kebijakan privasi' },
+      { to: '/ketentuan', label: 'Syarat & ketentuan' },
       { to: '/daftar', label: 'Jadi kontributor' },
     ],
   },

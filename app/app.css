@@ -266,6 +266,46 @@ html[data-embed] {
   .prose-editorial p + p {
     @apply mt-4;
   }
+  /* Rendered Markdown (legal pages from docs/legal/*.md) */
+  .prose-legal {
+    @apply text-body leading-[1.7] text-ink-soft;
+  }
+  .prose-legal > * + * {
+    @apply mt-4;
+  }
+  .prose-legal h2 {
+    @apply mt-10 border-t border-line pt-8 text-subheading font-semibold text-ink first:mt-0 first:border-t-0 first:pt-0;
+  }
+  .prose-legal h3 {
+    @apply mt-7 font-semibold text-ink;
+  }
+  .prose-legal strong {
+    @apply font-semibold text-ink;
+  }
+  .prose-legal a {
+    @apply text-ink underline decoration-line-strong decoration-1 underline-offset-[3px] transition-colors hover:decoration-ink;
+  }
+  .prose-legal ul {
+    @apply list-disc space-y-1.5 pl-5;
+  }
+  .prose-legal ol {
+    @apply list-decimal space-y-1.5 pl-5;
+  }
+  .prose-legal code {
+    @apply rounded-sm bg-sunk px-1 py-0.5 font-mono text-[0.85em] text-ink;
+  }
+  .prose-legal .table-scroll {
+    @apply overflow-x-auto rounded-2xl border border-line;
+  }
+  .prose-legal table {
+    @apply w-full border-collapse text-sm;
+  }
+  .prose-legal th {
+    @apply bg-alt px-3 py-2.5 text-left font-medium text-ink sm:px-4;
+  }
+  .prose-legal td {
+    @apply border-t border-line px-3 py-2.5 align-top [overflow-wrap:anywhere] sm:px-4;
+  }
   .num {
     font-variant-numeric: tabular-nums;
   }
