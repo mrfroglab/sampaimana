@@ -16,10 +16,12 @@ concurrency:
 
 jobs:
   test:
-    name: Typecheck, Lint & Build
+    name: Typecheck, Lint, Build & Docs
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # docs:check rebuilds CHANGELOG.md from the full history
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -29,6 +31,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm build
+      - run: pnpm docs:check
 
   build:
     name: Build & Push Docker Image
