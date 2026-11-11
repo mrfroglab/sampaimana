@@ -28,3 +28,27 @@ Perubahan yang terasa bagi pengguna, dikelompokkan per tanggal (WIB). Detail tek
 - **admin:** paste-based SIPP import dialog with reviewable stage proposals
 - **ui:** monochrome design system redesign (Geist, pill controls, hairline cards)
 - rebuild web as SSR editorial tracker with newsroom desk
+
+## 2026-07-03
+
+### Fitur
+
+- enhance Home.jsx skeleton with multi-element structure matching actual content
+
+### Perbaikan
+
+- align skeleton CSS selectors with JSX structure for precise loading match
+
+## 2026-06-30
+
+### Fitur
+
+- install recharts and implement interactive DonutChart using PieChart component
+- make donut chart and categories list interactive conforming to DESIGN.md
+- restructure homepage section order: Cases Table -> Categories -> Stats
+- move download pdf button to right side next to back navigation on desktop in CaseDetail
+- rename Dashboard in navbar to Home and commit PDF print floating button modifications
+- change 'Lihat Timeline' to 'Lihat Detail' and improve news links labeling in CaseDetail
+- align cases table design and make navbar and home page responsive on mobile
+- restructure Kelola Perkara layout with Cases table first and Modals for adding cases/stages
+- implement full CRUD for Cases and Stages in Admin panel
