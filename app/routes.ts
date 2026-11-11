@@ -13,6 +13,8 @@ export default [
   route('tren', 'routes/trends.tsx'),
   route('data', 'routes/data.tsx'),
   route('tentang', 'routes/about.tsx'),
+  route('privasi', 'routes/privacy.tsx'),
+  route('ketentuan', 'routes/terms.tsx'),
   route('embed/kasus/:slug', 'routes/embed.tsx'),
   route('embed.js', 'routes/embed-script.ts'),
   route('tanam', 'routes/embed-docs.tsx'),

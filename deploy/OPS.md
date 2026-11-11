@@ -94,4 +94,103 @@ curl -s https://sampaimana.hallojanu.me/api/health         # harus success
 
 Mesin baru: pasang Docker, jalankan `deploy/deploy.sh` (membuat stack kosong), hentikan `api web`, lalu ikuti langkah restore di atas.
 Rahasia (`JWT_SECRET`, `DB_PASSWORD`, kredensial admin) ada di `.env` stack dan **tidak** ikut backup; simpan terpisah di password manager.
-Mengganti `JWT_SECRET` hanya memaksa semua pengguna login ulang.
+**Jangan mengganti `JWT_SECRET` sembarangan.** Selain memaksa semua pengguna login ulang, kunci enkripsi rahasia 2FA diturunkan
+dari `JWT_SECRET` (`src/lib/totp.js` di repo API). Mengganti nilainya membuat verifikasi dua langkah semua pengguna tidak bisa
+dipakai, dan 2FA mereka harus di-reset (lihat runbook di bawah). Saat pindah mesin, pakai `JWT_SECRET` yang sama.
+
+## Konfigurasi yang belum lengkap
+
+Per 2026-11-11. Hapus baris yang sudah selesai.
+
+| Hal | Dampak selama belum diisi | Cara mengisi |
+| --- | --- | --- |
+| `SMTP_URL` kosong | Email notifikasi, ringkasan redaksi via email, dan balasan otomatis tidak terkirim. Notifikasi di aplikasi tetap jalan. | Isi `SMTP_URL` dan `MAIL_FROM` di `.env` stack, lalu `docker compose up -d api` |
+| `BACKUP_REMOTE` kosong | Backup hanya ada di mesin yang sama | Lihat [Salinan di luar server](#salinan-di-luar-server-wajib-untuk-benar-benar-aman) |
+| `BACKUP_NOTIFY_URL` / `BACKUP_HEARTBEAT_URL` kosong | Kegagalan backup hanya tercatat di jurnal | Lihat [Notifikasi kegagalan](#notifikasi-kegagalan) |
+| Turnstile, `REGISTRATION_OPEN`, `LOGIN_*` | Tidak bisa diubah dari `.env`, karena `docker-compose.yml` belum meneruskan env ini ke container API. Nilai default berlaku: pendaftaran terbuka, tanpa Turnstile. | Tambahkan ke blok `environment` service `api` di `deploy/docker-compose.yml` (mis. `REGISTRATION_OPEN: ${REGISTRATION_OPEN:-true}`), jalankan `deploy/deploy.sh`, lalu isi di `.env` |
+| Cloudflare Access untuk `/redaksi` | Meja redaksi hanya dilindungi login + 2FA | Atur di dasbor Cloudflare Zero Trust |
+
+## Runbook insiden
+
+Selalu mulai dari sini:
+
+```bash
+cd /opt/stacks/apps/sampaimana
+docker compose ps                                   # semua harus "healthy"
+curl -s https://sampaimana.hallojanu.me/api/health  # harus success
+docker logs --tail 100 sampaimana-api
+docker logs --tail 100 sampaimana-web
+```
+
+### Situs tidak bisa dibuka
+
+1. `docker compose ps`. Bila ada container yang mati: `docker compose up -d`, lalu periksa log container itu.
+2. Semua container sehat tapi situs tetap tidak terbuka: periksa Caddy (`docker logs --tail 50 caddy-proxy`) dan tunnel Cloudflare.
+3. API gagal start dengan pesan `Konfigurasi environment tidak valid`: ada env yang salah di `.env` stack. Pesannya menyebut env
+   yang bermasalah.
+4. API gagal start saat migrasi: lihat [Migrasi gagal](#migrasi-gagal).
+
+### Deploy dari CI gagal
+
+Job `deploy` mengecek health setelah container diganti. Kalau gagal, container baru tetap berjalan dalam keadaan tidak sehat.
+
+1. Buka log job di tab *Actions* GitHub, lalu `docker logs sampaimana-api` (atau `-web`) di server.
+2. Kalau penyebabnya tidak cepat ketemu, **rollback** (di bawah), lalu perbaiki lewat PR baru.
+
+### Rollback ke versi sebelumnya
+
+Cara utama, yang meninggalkan jejak dan tidak butuh akses ke server:
+
+```bash
+git revert <sha-commit-bermasalah>   # di repo yang bermasalah
+git push origin main                 # CI membangun dan men-deploy versi hasil revert
+```
+
+Cara darurat, bila CI juga bermasalah. Setiap build punya tag `sha-<7 karakter>` di GHCR. Docker di host **tidak** login ke GHCR,
+jadi login dulu dengan token GitHub ber-*scope* `read:packages`:
+
+```bash
+echo "$GHCR_TOKEN" | docker login ghcr.io -u <user-github> --password-stdin
+docker pull ghcr.io/mrfroglab/api-sampaimana:sha-<sha>
+docker tag  ghcr.io/mrfroglab/api-sampaimana:sha-<sha> ghcr.io/mrfroglab/api-sampaimana:latest
+docker compose up -d --no-deps api
+docker logout ghcr.io
+```
+
+Rollback API yang melewati sebuah migrasi **tidak** membatalkan migrasinya. Migrasi di repo ini dibuat aditif, jadi versi lama
+biasanya tetap jalan. Bila tidak, pulihkan dari backup.
+
+### Migrasi gagal
+
+Container API menjalankan `prisma migrate deploy` saat start. Bila gagal, API tidak start dan log-nya menyebut migrasi yang gagal.
+
+1. **Jangan** menjalankan `prisma migrate reset` di produksi.
+2. Perbaiki migrasinya lewat PR (migrasi baru, bukan mengedit migrasi yang sudah ter-*deploy*).
+3. Bila migrasi gagal setengah jalan dan Prisma menandainya *failed*, setelah memastikan keadaan skema:
+   `docker compose run --rm --entrypoint node_modules/.bin/prisma api migrate resolve --rolled-back <nama_migrasi>`, lalu deploy
+   ulang. `--entrypoint` diperlukan karena entrypoint biasa langsung menjalankan `migrate deploy` lagi.
+4. Bila data rusak: [restore dari backup](#cara-restore-sungguhan).
+
+### Admin terkunci atau kehilangan 2FA
+
+- Ada SUPER_ADMIN lain: buka `/redaksi/pengguna`, lalu pilih **buka kunci** atau **reset 2FA** pada akun itu.
+- Satu-satunya SUPER_ADMIN terkunci: tunggu `LOGIN_LOCK_MINUTES` (default 15 menit), atau buka kunci lewat database:
+  ```bash
+  docker exec -it sampaimana-db psql -U sampaimana -d sampaimana -c \
+    "UPDATE users SET \"failedLogins\"=0, \"lockedUntil\"=NULL WHERE email='<email>';"
+  ```
+- Satu-satunya SUPER_ADMIN kehilangan perangkat 2FA dan kode pemulihan:
+  ```bash
+  docker exec -it sampaimana-db psql -U sampaimana -d sampaimana -c \
+    "UPDATE users SET \"totpSecret\"=NULL, \"totpEnabledAt\"=NULL, \"totpLastStep\"=NULL, \"recoveryCodes\"='{}' WHERE email='<email>';"
+  ```
+  Setelah masuk, aktifkan 2FA lagi dan simpan kode pemulihan baru di password manager.
+
+### Dugaan kebocoran data atau akun dibobol
+
+1. Cabut akses: blokir akun yang dicurigai di `/redaksi/pengguna`. Pengguna yang diblokir langsung kehilangan akses.
+2. Bila `JWT_SECRET` atau `.env` bocor: ganti `JWT_SECRET` (semua sesi putus, dan 2FA semua pengguna perlu di-reset, lihat di
+   atas), ganti `DB_PASSWORD`, lalu `docker compose up -d`.
+3. Simpan bukti: `activity_logs` (log audit, termasuk IP), log container, dan log Cloudflare.
+4. UU PDP mewajibkan pemberitahuan tertulis kepada pengguna terdampak dan otoritas paling lambat **3×24 jam** setelah kebocoran
+   diketahui. Lihat [Kebijakan Privasi](../docs/legal/PRIVACY.md#5-keamanan).
