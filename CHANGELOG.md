@@ -4,6 +4,12 @@
 
 Perubahan yang terasa bagi pengguna, dikelompokkan per tanggal (WIB). Detail teknis ada di riwayat commit.
 
+## 2026-11-11
+
+### Fitur
+
+- **legal:** privacy policy and terms pages rendered from docs/legal
+
 ## 2026-11-10
 
 ### Keamanan
